@@ -196,4 +196,83 @@ export default function ReceitaPage() {
         {/* BY TIPO — VENDA */}
         <div className="card" style={{ marginBottom: '1.5rem' }}>
           <h2 style={{ fontSize: '0.925rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-            Receita Estimada por Tipo — Venda (comissão {(receitaResumo.comissaoVenda
+            Receita Estimada por Tipo — Venda (comissão {(receitaResumo.comissaoVendaPct * 100).toFixed(0)}%)
+          </h2>
+          <div className="table-container">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Qtd. Imóveis</th>
+                  <th>Ticket Médio</th>
+                  <th>Receita Estimada</th>
+                  <th>Participação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {receitaVendaPorTipo.map((row) => {
+                  const totalReceita = receitaVendaPorTipo.reduce((acc, r) => acc + r.receita_estimada, 0);
+                  const pct = totalReceita > 0 ? (row.receita_estimada / totalReceita) * 100 : 0;
+                  return (
+                    <tr key={row.tipo}>
+                      <td className="td-primary" style={{ textTransform: 'capitalize' }}>{row.tipo}</td>
+                      <td>{row.count}</td>
+                      <td style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(row.ticket_medio)}</td>
+                      <td style={{ color: '#22c55e', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        {formatCurrency(row.receita_estimada)}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div className="progress-track" style={{ width: 80 }}>
+                            <div className="progress-fill" style={{ width: `${pct}%`, background: '#6366f1' }} />
+                          </div>
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{pct.toFixed(1)}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* BY TIPO — LOCAÇÃO (intermediação + administração juntas) */}
+        <div className="card">
+          <h2 style={{ fontSize: '0.925rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1rem' }}>
+            Receita Estimada por Tipo — Locação (intermediação única + administração {(receitaResumo.comissaoLocacaoPct * 100).toFixed(0)}%/mês)
+          </h2>
+          <div className="table-container">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Qtd. Imóveis</th>
+                  <th>Ticket Médio (aluguel/mês)</th>
+                  <th>Intermediação (única)</th>
+                  <th>Administração (mês)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {receitaLocacaoCombinadaPorTipo.map((row) => (
+                  <tr key={row.tipo}>
+                    <td className="td-primary" style={{ textTransform: 'capitalize' }}>{row.tipo}</td>
+                    <td>{row.count}</td>
+                    <td style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(row.ticket_medio)}</td>
+                    <td style={{ color: '#ec4899', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      {formatCurrency(row.receita_intermediacao)}
+                    </td>
+                    <td style={{ color: '#a855f7', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      {formatCurrency(row.receita_administracao_mes)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </>
+  );
+}

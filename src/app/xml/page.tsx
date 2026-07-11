@@ -555,4 +555,122 @@ export default function XmlPage() {
           {xmlEnriquecido && (
             <>
               <button className="btn btn-secondary" onClick={copyToClipboard} style={{ gap: 6 }}>
-                {copied ? 
+                {copied ? <Check size={14} color="#22c55e" /> : <Copy size={14} />}
+                {copied ? 'Copiado!' : 'Copiar XML'}
+              </button>
+              <a
+                href={`data:text/xml;charset=utf-8,${encodeURIComponent(xmlEnriquecido)}`}
+                download="feed_enriquecido_udata.xml"
+                className="btn btn-secondary"
+                style={{ gap: 6, display: 'inline-flex', alignItems: 'center' }}
+              >
+                <Download size={14} /> Baixar feed_enriquecido.xml
+              </a>
+            </>
+          )}
+        </div>
+
+        {/* DUAL WORKSPACE */}
+        <div className={styles.workspaceGrid}>
+          {/* Left: Input original */}
+          <div className="card">
+            <div className={styles.editorHeader}>
+              <span className={styles.editorLabel}>Entrada XML (Cole ou Edite aqui)</span>
+              <span className={styles.fileSize}>
+                {((xmlOriginal.length) / 1024).toFixed(1)} KB
+              </span>
+            </div>
+            <textarea
+              className={styles.editor}
+              value={xmlOriginal}
+              onChange={(e) => {
+                setXmlOriginal(e.target.value);
+                setXmlEnriquecido('');
+              }}
+              spellCheck="false"
+            />
+          </div>
+
+          {/* Right: Enriched XML output */}
+          <div className="card">
+            <div className={styles.editorHeader}>
+              <span className={styles.editorLabel} style={{ color: xmlEnriquecido ? '#22c55e' : 'var(--text-muted)' }}>
+                Saída XML Enriquecida &amp; Higienizada
+              </span>
+              {xmlEnriquecido && (
+                <span className={styles.successBadge}>✓ Pronto para os portais</span>
+              )}
+            </div>
+            {xmlEnriquecido ? (
+              <textarea
+                className={`${styles.editor} ${styles.enriched}`}
+                value={xmlEnriquecido}
+                readOnly
+                spellCheck="false"
+              />
+            ) : (
+              <div className={styles.emptyEditor}>
+                <FileCode size={40} />
+                <div>Clique em &quot;Rodar Enriquecimento XML&quot; para rodar as regras no XML da esquerda</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* RESULTS & LOGS SECTION */}
+        {logs.length > 0 && (
+          <div className={styles.logsSection}>
+            <div className="card">
+              <h2 className={styles.cardTitle}>Simulador de Alterações Realizadas</h2>
+              <div className={styles.changesGrid}>
+                {alteracoes.length === 0 ? (
+                  <div className={styles.noChanges}>
+                    {processando ? 'Processando alterações...' : 'Nenhuma regra modificou o arquivo de entrada. Verifique se o formato do XML é compatível (VrSync/Listing).'}
+                  </div>
+                ) : (
+                  alteracoes.map((c, idx) => (
+                    <div key={idx} className={styles.changeItem}>
+                      <div className={styles.changeMeta}>
+                        <span className={styles.changeImovel}>{c.imovelId}</span>
+                        <span className={styles.changeField}>{c.campo}</span>
+                        {c.ganho > 0 && (
+                          <span className={styles.changePts} style={{ color: '#22c55e' }}>+{c.ganho.toFixed(1)} pts</span>
+                        )}
+                      </div>
+                      <div className={styles.changeDiff}>
+                        <div className={styles.diffAntes}>
+                          <span className={styles.diffLabel}>Antes:</span>
+                          <code>{c.antes || '(vazio)'}</code>
+                        </div>
+                        <div className={styles.diffDepois}>
+                          <span className={styles.diffLabel}>Depois:</span>
+                          <code>{c.depois}</code>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Console log box */}
+              <div style={{ marginTop: '1.25rem' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>
+                  Logs de Execução da Fila
+                </span>
+                <div className={styles.consoleBox}>
+                  {logs.map((log, i) => (
+                    <div key={i} className={styles.consoleLine}>
+                      <span className={styles.consoleTime}>[{new Date().toLocaleTimeString()}]</span> {log}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+      </div>
+    </>
+  );
+}

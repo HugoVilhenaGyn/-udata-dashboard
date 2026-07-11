@@ -189,3 +189,47 @@ export default function QualidadePage() {
                       <span
                         key={c.id}
                         className={styles.criterioMiniDot}
+                        style={{ background: c.presente ? '#22c55e' : '#ef4444' }}
+                        title={c.label}
+                      />
+                    ))}
+                  </div>
+
+                  {isOpen ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
+                </button>
+
+                {/* Expanded criterios */}
+                {isOpen && (
+                  <div className={styles.criteriosList}>
+                    <div className={styles.criteriosGrid}>
+                      {imovel.criterios_qualidade.map(c => <CriterioRow key={c.id} c={c} />)}
+                    </div>
+
+                    {missing.length > 0 && (
+                      <div className={styles.enrichAction}>
+                        <div className={styles.enrichInfo}>
+                          <AlertCircle size={14} color="#f59e0b" />
+                          <span>{missing.length} critérios faltando · potencial de +{ganho_potencial.toFixed(1)} pontos na nota</span>
+                        </div>
+                        <button
+                          className="btn btn-primary"
+                          style={{ fontSize: '0.8rem' }}
+                          disabled={enriquecendo === imovel.id}
+                          onClick={() => enriquecerImovel(imovel.id)}
+                        >
+                          <Wand2 size={13} />
+                          {enriquecendo === imovel.id ? 'Enriquecendo...' : 'Enriquecer automaticamente'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+      </div>
+    </>
+  );
+}

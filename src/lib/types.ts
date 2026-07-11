@@ -258,4 +258,63 @@ export interface Imobiliaria {
   data_criacao: string;
   config: {
     cadencia_republicacao_horas: number;
-    proteger_endereco: boole
+    proteger_endereco: boolean;
+    gerar_descricao_auto: boolean;
+    score_minimo_destaque: number;
+  };
+}
+
+// --- XML Enrichment Engine ---
+
+export interface XMLEnrichmentConfig {
+  portais: PortalSlug[];
+  regras: RegraEnriquecimento[];
+  gerar_descricao_llm: boolean;
+  normalizar_enderecos: boolean;
+  proteger_enderecos: boolean;
+  minimo_fotos: number;
+  minimo_chars_descricao: number;
+  calcular_preco_sugerido: boolean;
+}
+
+export interface XMLProcessingJob {
+  id: string;
+  carga_id: string;
+  status: 'queued' | 'running' | 'done' | 'failed';
+  progress: number;            // 0–100
+  imoveis_processados: number;
+  total_imoveis: number;
+  started_at?: string;
+  finished_at?: string;
+  logs: string[];
+}
+
+// --- API Responses ---
+
+export interface ApiResponse<T> {
+  data: T;
+  success: boolean;
+  message?: string;
+  meta?: {
+    page?: number;
+    per_page?: number;
+    total?: number;
+  };
+}
+
+export interface ImovelFiltros {
+  bairro?: string;
+  tipo?: ImovelTipo;
+  finalidade?: ImovelFinalidade;
+  status_farol?: FarolStatus;
+  nota_qualidade_min?: number;
+  preco_min?: number;
+  preco_max?: number;
+  portal?: PortalSlug;
+  com_destaque?: boolean;
+  search?: string;
+  ordenar_por?: 'nota_qualidade' | 'preco' | 'leads' | 'data_cadastro' | 'dias_mercado';
+  ordem?: 'asc' | 'desc';
+  page?: number;
+  per_page?: number;
+}

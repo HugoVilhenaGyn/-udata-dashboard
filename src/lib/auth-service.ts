@@ -24,4 +24,19 @@ export interface UserSession {
 
 // Criar token JWT assinado para o usuário logado
 export async function signSessionToken(session: UserSession): Promise<string> {
-  return new
+  return new SignJWT({ ...session })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('24h') // Expira em 24h
+    .sign(JWT_SECRET);
+}
+
+// Validar token JWT assinado
+export async function verifySessionToken(token: string): Promise<UserSession | null> {
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    return payload as unknown as UserSession;
+  } catch (error) {
+    return null;
+  }
+}

@@ -221,4 +221,69 @@ ${imoveis.map(i => `    <Listing>
                     <QualityBar score={imovel.nota_qualidade} size="sm" />
                   </td>
                   <td>
-                    <div style={{ display: 'flex', alignIte
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Users size={12} color="var(--text-muted)" />
+                      <span style={{ fontSize: '0.8rem' }}>{imovel.metricas.leads_semana}</span>
+                    </div>
+                  </td>
+                  <td style={{ fontSize: '0.8rem' }}>{imovel.metricas.dias_no_mercado}d</td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                      {imovel.portais_publicados.map(p => (
+                        <span key={p} style={{
+                          background: `${portalColors[p]}22`,
+                          color: portalColors[p] || 'var(--text-muted)',
+                          border: `1px solid ${portalColors[p]}44`,
+                          borderRadius: 4,
+                          padding: '1px 6px',
+                          fontSize: '0.65rem',
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                        }}>{p}</span>
+                      ))}
+                    </div>
+                  </td>
+                  <td>
+                    {imovel.destaque_ativo ? (
+                      <span style={{ color: '#fb923c', fontSize: '0.75rem', fontWeight: 600 }}>⚡ Ativo</span>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* PAGINATION */}
+        <div className={styles.pagination}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            Página {page} de {totalPages} · {filtered.length} imóveis
+          </span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button className="btn btn-secondary" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+              ← Anterior
+            </button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pg = page <= 3 ? i + 1 : page - 2 + i;
+              if (pg > totalPages) return null;
+              return (
+                <button
+                  key={pg}
+                  className={`btn ${pg === page ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setPage(pg)}
+                  style={{ minWidth: 36 }}
+                >{pg}</button>
+              );
+            })}
+            <button className="btn btn-secondary" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+              Próximo →
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </>
+  );
+}

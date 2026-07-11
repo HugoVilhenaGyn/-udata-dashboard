@@ -20,4 +20,8 @@ export default function FarolBadge({ status, finalidade, size = 'md', showDot = 
   const { cls, dot } = config[status];
   return (
     <span className={cls} style={size === 'sm' ? { fontSize: '0.7rem', padding: '0.2rem 0.5rem' } : {}}>
-      {showDot && <span className={dot} style={{ width: 6, height: 6 }} />
+      {showDot && <span className={dot} style={{ width: 6, height: 6 }} />}
+      {farolLabel(status, finalidade)}
+    </span>
+  );
+}

@@ -67,4 +67,5 @@ export async function middleware(req: NextRequest) {
 
 // Configurações do matcher para rodar nas rotas principais
 export const config = {
-  matcher: 
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+};

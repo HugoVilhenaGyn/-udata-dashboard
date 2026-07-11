@@ -60,3 +60,58 @@
   justify-content: space-between;
   margin-bottom: 1rem;
 }
+
+.farolBreakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.farolRow {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.farolRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.farolRowHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+}
+
+.farolDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.farolRowLabel {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.farolRowCount {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.farolRowValues {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.farolRowValues strong {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}

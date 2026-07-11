@@ -521,4 +521,337 @@ export const mockRevenueData: RevenueData[] = [
   },
 ];
 
-// =======================
+// =============================================
+// DASHBOARD KPIs
+// =============================================
+export const mockKPIs: DashboardKPIs = {
+  total_imoveis: mockImoveis.length,
+  // Os rótulos aqui são "Venda X" — por isso contam SÓ imóveis à venda.
+  // Antes essa contagem misturava imóveis de locação classificados com o
+  // mesmo status_farol, o que inflava o card "Venda Iminente" com aluguéis.
+  imoveis_venda_iminente: mockImoveis.filter(i => i.finalidade === 'venda' && i.status_farol === 'venda_iminente').length,
+  imoveis_venda_potencial: mockImoveis.filter(i => i.finalidade === 'venda' && i.status_farol === 'venda_potencial').length,
+  imoveis_baixo_potencial: mockImoveis.filter(i => i.finalidade === 'venda' && i.status_farol === 'baixo_potencial').length,
+  nota_qualidade_media: parseFloat(
+    (mockImoveis.reduce((acc, i) => acc + i.nota_qualidade, 0) / mockImoveis.length).toFixed(1)
+  ),
+  leads_mes: 1176,
+  visualizacoes_mes: 108800,
+  // Receita projetada/inferida do KPI geral reflete só a comissão de VENDA
+  // (é a leitura tradicional de "receita projetada" numa imobiliária).
+  // A receita recorrente de locação aparece separadamente no Dashboard de Receita.
+  receita_projetada: Math.round(receitaResumo.comissaoPotencialVenda),
+  receita_inferida: Math.round(receitaResumo.comissaoInferidaVenda),
+  imoveis_com_destaque: mockDestaques.length,
+  portais_ativos: mockPortais.filter(p => p.ativo).length,
+  xml_processados_mes: 847,
+};
+
+// =============================================
+// ENRICHMENT RULES
+// =============================================
+export const mockRegrasEnriquecimento: RegraEnriquecimento[] = [
+  {
+    id: 'rule-01',
+    nome: 'Completar endereço',
+    descricao: 'Adiciona número e CEP quando endereço está incompleto',
+    tipo: 'completar_campo',
+    ativo: true,
+    campo_alvo: 'endereco',
+    condicao: 'endereco.length < 20 || !endereco.includes(",")',
+    impacto_nota: 1.5,
+    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb'],
+  },
+  {
+    id: 'rule-02',
+    nome: 'Gerar descrição automática',
+    descricao: 'Usa template inteligente para gerar descrição baseada nos atributos do imóvel',
+    tipo: 'gerar_descricao',
+    ativo: true,
+    campo_alvo: 'descricao',
+    condicao: 'descricao.length < 100',
+    template: '{tipo} de {area_util}m² com {quartos} quartos e {vagas} vagas em {bairro}. {diferenciais}',
+    impacto_nota: 2.0,
+    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb'],
+  },
+  {
+    id: 'rule-03',
+    nome: 'Normalizar título',
+    descricao: 'Formata título com tipo + quartos + bairro no padrão ABNT imobiliário',
+    tipo: 'reformatar',
+    ativo: true,
+    campo_alvo: 'titulo',
+    condicao: 'titulo.length < 20',
+    template: '{Tipo} {quartos}q - {bairro}, {cidade}',
+    impacto_nota: 0.5,
+    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb'],
+  },
+  {
+    id: 'rule-04',
+    nome: 'Proteger endereço (OLX/ZAP)',
+    descricao: 'Remove número exato do imóvel nos portais que permitem proteção de endereço',
+    tipo: 'proteger_endereco',
+    ativo: true,
+    campo_alvo: 'endereco',
+    impacto_nota: 0,
+    portais_alvo: ['olx', 'zap', 'vivareal'],
+  },
+  {
+    id: 'rule-05',
+    nome: 'Validar preço de mercado',
+    descricao: 'Sinaliza imóveis com preço 20%+ acima ou abaixo da média do bairro',
+    tipo: 'validar',
+    ativo: true,
+    campo_alvo: 'preco_atual',
+    condicao: 'preco_atual > (preco_medio_bairro * 1.2) || preco_atual < (preco_medio_bairro * 0.8)',
+    impacto_nota: 0,
+    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb'],
+  },
+  {
+    id: 'rule-06',
+    nome: 'Calcular nota de qualidade',
+    descricao: 'Recalcula nota de qualidade do anúncio após todas as regras aplicadas',
+    tipo: 'calcular_nota',
+    ativo: true,
+    campo_alvo: 'nota_qualidade',
+    impacto_nota: 0,
+    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb', 'meta', 'google'],
+  },
+  {
+    id: 'rule-07',
+    nome: 'Normalizar metragem',
+    descricao: 'Padroniza area_util e area_total para número inteiro sem "m²" no XML',
+    tipo: 'normalizar_endereco',
+    ativo: true,
+    campo_alvo: 'area_util',
+    impacto_nota: 0.5,
+    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb'],
+  },
+  {
+    id: 'rule-08',
+    nome: 'Alertar fotos insuficientes',
+    descricao: 'Marca imóvel quando quantidade de fotos for menor que 8',
+    tipo: 'validar',
+    ativo: true,
+    campo_alvo: 'fotos',
+    condicao: 'fotos.length < 8',
+    impacto_nota: 2.5,
+    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb'],
+  },
+];
+
+// =============================================
+// CARGAS XML (histórico de processamento)
+// =============================================
+export const mockCargasXML: CargaXML[] = [
+  {
+    id: 'carga-001',
+    imobiliaria_id: 'imob-001',
+    portal: 'zap',
+    formato: 'vrsync',
+    url_origem: 'https://crm.gralhaimoveis.com.br/export/vrsync.xml',
+    conteudo_original: '',
+    conteudo_enriquecido: '',
+    imoveis_total: 120,
+    imoveis_processados: 117,
+    imoveis_com_erro: 3,
+    nota_qualidade_media: 7.8,
+    status: 'concluido',
+    regras_aplicadas: mockRegrasEnriquecimento.filter(r => r.ativo),
+    data_criacao: '2026-07-11T08:00:00',
+    data_processamento: '2026-07-11T08:04:22',
+    erros: [
+      { imovel_id: 'CRM-48291', campo: 'preco', mensagem: 'Preço não informado', severidade: 'error' },
+      { imovel_id: 'CRM-51102', campo: 'area_util', mensagem: 'Área inválida: "0"', severidade: 'error' },
+      { imovel_id: 'CRM-67332', campo: 'descricao', mensagem: 'Descrição abaixo de 50 caracteres', severidade: 'warning' },
+    ],
+  },
+  {
+    id: 'carga-002',
+    imobiliaria_id: 'imob-001',
+    portal: 'vivareal',
+    formato: 'vrsync',
+    url_origem: 'https://crm.gralhaimoveis.com.br/export/vrsync.xml',
+    conteudo_original: '',
+    conteudo_enriquecido: '',
+    imoveis_total: 115,
+    imoveis_processados: 115,
+    imoveis_com_erro: 0,
+    nota_qualidade_media: 8.1,
+    status: 'concluido',
+    regras_aplicadas: mockRegrasEnriquecimento.filter(r => r.ativo),
+    data_criacao: '2026-07-11T08:00:00',
+    data_processamento: '2026-07-11T08:03:55',
+  },
+  {
+    id: 'carga-003',
+    imobiliaria_id: 'imob-001',
+    portal: 'olx',
+    formato: 'vrsync',
+    url_origem: 'https://crm.gralhaimoveis.com.br/export/vrsync.xml',
+    conteudo_original: '',
+    conteudo_enriquecido: '',
+    imoveis_total: 118,
+    imoveis_processados: 0,
+    imoveis_com_erro: 0,
+    nota_qualidade_media: 0,
+    status: 'processando',
+    regras_aplicadas: mockRegrasEnriquecimento.filter(r => r.ativo),
+    data_criacao: '2026-07-11T12:00:00',
+  },
+];
+
+// =============================================
+// WEEKLY METRICS (for charts)
+// =============================================
+export const mockWeeklyMetrics = [
+  { semana: 'Sem 1', leads: 180, visualizacoes: 4200, qualidade_media: 6.8 },
+  { semana: 'Sem 2', leads: 210, visualizacoes: 5100, qualidade_media: 7.1 },
+  { semana: 'Sem 3', leads: 195, visualizacoes: 4800, qualidade_media: 7.4 },
+  { semana: 'Sem 4', leads: 248, visualizacoes: 6200, qualidade_media: 7.8 },
+  { semana: 'Sem 5', leads: 267, visualizacoes: 6800, qualidade_media: 8.0 },
+  { semana: 'Sem 6', leads: 290, visualizacoes: 7400, qualidade_media: 8.2 },
+  { semana: 'Sem 7', leads: 312, visualizacoes: 8100, qualidade_media: 8.5 },
+];
+
+// =============================================
+// SAMPLE XML (VrSync format)
+// =============================================
+export const sampleVrSyncXML = `<?xml version="1.0" encoding="UTF-8"?>
+<ListingDataFeed>
+  <Header>
+    <Provider>Gralha Imóveis</Provider>
+    <ListingCount>3</ListingCount>
+    <Timestamp>2026-07-11T08:00:00</Timestamp>
+  </Header>
+  <Listings>
+    <Listing>
+      <ListingID>CRM-48291</ListingID>
+      <Title>Apartamento Batel</Title>
+      <ListingType>For Sale</ListingType>
+      <BusinessType>For Sale</BusinessType>
+      <Location>
+        <Address>Rua Padre Anchieta</Address>
+        <City>Curitiba</City>
+        <State>PR</State>
+        <Neighborhood>Batel</Neighborhood>
+      </Location>
+      <Details>
+        <PropertyType>Residential/Apartment</PropertyType>
+        <NumBedrooms>3</NumBedrooms>
+        <NumBathrooms>2</NumBathrooms>
+        <NumGarages>2</NumGarages>
+        <Area>
+          <TotalArea>120</TotalArea>
+          <UsableArea>98</UsableArea>
+        </Area>
+      </Details>
+      <ListPrice/>
+      <Description>Apto disponível</Description>
+      <Media>
+        <Item caption="Sala" medium="image">https://example.com/foto1.jpg</Item>
+        <Item caption="Quarto" medium="image">https://example.com/foto2.jpg</Item>
+      </Media>
+    </Listing>
+    <Listing>
+      <ListingID>CRM-52841</ListingID>
+      <Title>Casa em Água Verde com 4 suítes e área gourmet</Title>
+      <ListingType>For Sale</ListingType>
+      <BusinessType>For Sale</BusinessType>
+      <Location>
+        <Address>Rua Alferes Poli, 842 - Água Verde, Curitiba - PR</Address>
+        <City>Curitiba</City>
+        <State>PR</State>
+        <Neighborhood>Água Verde</Neighborhood>
+        <Zipcode>80240-280</Zipcode>
+      </Location>
+      <Details>
+        <PropertyType>Residential/House</PropertyType>
+        <NumBedrooms>4</NumBedrooms>
+        <NumSuites>4</NumSuites>
+        <NumBathrooms>5</NumBathrooms>
+        <NumGarages>3</NumGarages>
+        <Area>
+          <TotalArea>380</TotalArea>
+          <UsableArea>320</UsableArea>
+        </Area>
+      </Details>
+      <ListPrice currency="BRL">1850000</ListPrice>
+      <Description>Linda casa em condomínio com 4 suítes, área gourmet coberta, piscina aquecida e 3 vagas. Segurança 24h. Imóvel em perfeito estado de conservação, com acabamento de alto padrão. Localização privilegiada, próximo a escolas, supermercados e fácil acesso ao centro da cidade. Aceita financiamento bancário.</Description>
+      <Media>
+        <Item caption="Fachada" medium="image">https://example.com/casa1.jpg</Item>
+        <Item caption="Sala" medium="image">https://example.com/casa2.jpg</Item>
+        <Item caption="Cozinha" medium="image">https://example.com/casa3.jpg</Item>
+        <Item caption="Suíte Master" medium="image">https://example.com/casa4.jpg</Item>
+        <Item caption="Piscina" medium="image">https://example.com/casa5.jpg</Item>
+        <Item caption="Área Gourmet" medium="image">https://example.com/casa6.jpg</Item>
+        <Item caption="Jardim" medium="image">https://example.com/casa7.jpg</Item>
+        <Item caption="Garagem" medium="image">https://example.com/casa8.jpg</Item>
+        <Item medium="video">https://youtube.com/watch?v=abc123</Item>
+      </Media>
+    </Listing>
+    <Listing>
+      <ListingID>CRM-67332</ListingID>
+      <Title></Title>
+      <ListingType>For Sale</ListingType>
+      <BusinessType>For Sale</BusinessType>
+      <Location>
+        <Address>Bigorrilho</Address>
+        <City>Curitiba</City>
+        <State>PR</State>
+        <Neighborhood>Bigorrilho</Neighborhood>
+      </Location>
+      <Details>
+        <PropertyType>Residential/Apartment</PropertyType>
+        <NumBedrooms>2</NumBedrooms>
+        <NumBathrooms>1</NumBathrooms>
+        <NumGarages>1</NumGarages>
+        <Area>
+          <UsableArea>68</UsableArea>
+        </Area>
+      </Details>
+      <ListPrice currency="BRL">480000</ListPrice>
+      <Description>Apto</Description>
+      <Media>
+        <Item caption="Sala" medium="image">https://example.com/ap1.jpg</Item>
+      </Media>
+    </Listing>
+  </Listings>
+</ListingDataFeed>`;
+
+// Helpers para formatar
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency', currency: 'BRL', maximumFractionDigits: 0,
+  }).format(value);
+}
+
+export function formatNumber(value: number): string {
+  return new Intl.NumberFormat('pt-BR').format(value);
+}
+
+// Rótulo do Farol de Oportunidade — precisa ser ciente da finalidade do
+// imóvel: "Venda Iminente" não faz sentido para um imóvel de aluguel, e
+// vice-versa. Sem essa distinção, imóveis de locação apareciam rotulados
+// como oportunidade de "venda", o que é incorreto e confunde o corretor.
+export function farolLabel(status: FarolStatus, finalidade?: 'venda' | 'aluguel'): string {
+  if (finalidade === 'aluguel') {
+    return {
+      venda_iminente: 'Locação Iminente',
+      venda_potencial: 'Locação Potencial',
+      baixo_potencial: 'Baixo Potencial (Locação)',
+    }[status];
+  }
+  return {
+    venda_iminente: 'Venda Iminente',
+    venda_potencial: 'Venda Potencial',
+    baixo_potencial: 'Baixo Potencial',
+  }[status];
+}
+
+export function qualidadeColor(nota: number): string {
+  if (nota >= 8.5) return '#22c55e';
+  if (nota >= 7) return '#84cc16';
+  if (nota >= 5) return '#f59e0b';
+  return '#ef4444';
+}

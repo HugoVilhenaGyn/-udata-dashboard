@@ -326,4 +326,22 @@ export default function CopilotoPage() {
             </div>
 
             <form onSubmit={handleSend} className={styles.chatInputRow}>
-              <
+              <input
+                type="text"
+                className="input"
+                placeholder="Pergunte ao Orquestrador IA sobre preços, qualidade ou alocação do XML..."
+                value={inputValue}
+                onChange={e => setInputValue(e.target.value)}
+                disabled={isTyping}
+              />
+              <button type="submit" className="btn btn-primary" disabled={isTyping || !inputValue.trim()}>
+                <Send size={15} />
+              </button>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </>
+  );
+}

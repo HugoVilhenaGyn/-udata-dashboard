@@ -172,4 +172,141 @@ export default function FarolPage() {
                   </span>
                 </div>
                 <div className={styles.farolCardTitle} style={{ color: cfg.color }}>{cfg.labelAluguel}</div>
-                <div className={styles.farolCardDesc}>{cfg.descriptionAluguel}</di
+                <div className={styles.farolCardDesc}>{cfg.descriptionAluguel}</div>
+                <div className={styles.farolCardPct}>
+                  {imoveisLocacao.length > 0 ? ((countsLocacao[status] / imoveisLocacao.length) * 100).toFixed(0) : 0}% do portfólio de locação
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* FILTERS */}
+        <div className={styles.filters}>
+          <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
+            <Filter size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              placeholder="Buscar por título ou bairro..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="input"
+              style={{ paddingLeft: '2rem' }}
+            />
+          </div>
+          <div className={styles.filterBtns} style={{ display: 'flex', gap: 6 }}>
+            {([
+              { v: 'venda', label: 'Venda' },
+              { v: 'aluguel', label: 'Locação' },
+              { v: 'all', label: 'Todos' },
+            ] as { v: ImovelFinalidade | 'all'; label: string }[]).map(opt => (
+              <button
+                key={opt.v}
+                className={`btn ${finalidadeFilter === opt.v ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ fontSize: '0.8rem' }}
+                onClick={() => setFinalidadeFilter(opt.v)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <select
+            value={tipoFilter}
+            onChange={e => setTipoFilter(e.target.value as any)}
+            className="select"
+            style={{ width: 160 }}
+          >
+            <option value="all">Todos os tipos</option>
+            <option value="apartamento">Apartamento</option>
+            <option value="casa">Casa</option>
+            <option value="studio">Studio</option>
+            <option value="cobertura">Cobertura</option>
+            <option value="comercial">Comercial</option>
+          </select>
+          <span className={styles.resultCount}>{filtered.length} imóveis</span>
+        </div>
+
+        {/* PROPERTY GRID */}
+        <div className={`${styles.propertyGrid} stagger`}>
+          {filtered.map((imovel) => {
+            const cfg = FAROL_CONFIG[imovel.status_farol];
+            const diff = imovel.preco_sugerido_ia
+              ? ((imovel.preco_atual - imovel.preco_sugerido_ia) / imovel.preco_sugerido_ia) * 100
+              : 0;
+
+            return (
+              <div
+                key={imovel.id}
+                className={styles.propertyCard}
+                style={{ borderColor: `${cfg.color}25` }}
+              >
+                {/* Foto */}
+                <div className={styles.cardPhoto}>
+                  <img src={imovel.fotos[0]} alt={imovel.titulo} className={styles.cardImg} />
+                  <div className={styles.cardOverlay}>
+                    <FarolBadge status={imovel.status_farol} finalidade={imovel.finalidade} size="sm" />
+                    {imovel.destaque_ativo && (
+                      <span className="badge badge-primary" style={{ fontSize: '0.65rem' }}>⚡ Destaque</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Info */}
+                <div className={styles.cardBody}>
+                  <div className={styles.cardTitle}>{imovel.titulo}</div>
+                  <div className={styles.cardBairro}>{imovel.bairro} · {imovel.area_util}m²</div>
+
+                  {/* Price comparison */}
+                  <div className={styles.priceRow}>
+                    <div>
+                      <div className={styles.priceLabel}>
+                        {imovel.finalidade === 'aluguel' ? 'Aluguel/mês' : 'Preço atual'}
+                      </div>
+                      <div className={styles.priceValue}>{formatCurrency(imovel.preco_atual)}</div>
+                    </div>
+                    {imovel.preco_sugerido_ia && (
+                      <div style={{ textAlign: 'right' }}>
+                        <div className={styles.priceLabel}>Sugerido IA</div>
+                        <div className={styles.priceSugerido}>{formatCurrency(imovel.preco_sugerido_ia)}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Price diff badge */}
+                  {Math.abs(diff) > 1 && (
+                    <div className={styles.priceDiff} style={{
+                      color: diff > 10 ? '#ef4444' : diff > 0 ? '#f59e0b' : '#22c55e',
+                      background: diff > 10 ? 'rgba(239,68,68,0.08)' : diff > 0 ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)',
+                    }}>
+                      {diff > 0 ? '▲' : '▼'} {Math.abs(diff).toFixed(1)}% vs. média de {imovel.finalidade === 'aluguel' ? 'locação' : 'venda'} do segmento
+                    </div>
+                  )}
+
+                  {/* Metrics */}
+                  <div className={styles.metricsRow}>
+                    <div className={styles.metric}>
+                      <Eye size={12} />
+                      <span>{formatNumber(imovel.metricas.visualizacoes_semana)}</span>
+                    </div>
+                    <div className={styles.metric}>
+                      <Users size={12} />
+                      <span>{imovel.metricas.leads_semana} leads</span>
+                    </div>
+                    <div className={styles.metric}>
+                      <Clock size={12} />
+                      <span>{imovel.metricas.dias_no_mercado}d</span>
+                    </div>
+                  </div>
+
+                  {/* Quality */}
+                  <QualityBar score={imovel.nota_qualidade} size="sm" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+      </div>
+    </>
+  );
+}

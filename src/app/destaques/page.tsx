@@ -262,4 +262,133 @@ export default function DestaquesPage() {
           <div className={`card ${styles.kpiMini}`} style={{ borderColor: 'rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.05)' }}>
             <Cpu size={16} color="#6366f1" />
             <div>
-             
+              <div className={styles.kpiVal} style={{ color: '#818cf8' }}>IA ativa</div>
+              <div className={styles.kpiLbl}>Alocação automática</div>
+            </div>
+          </div>
+        </div>
+
+        {aviso && (
+          <div className="card" style={{ marginBottom: '1rem', borderColor: 'rgba(99,102,241,0.35)', background: 'rgba(99,102,241,0.06)', fontSize: '0.82rem' }}>
+            {aviso}
+          </div>
+        )}
+
+        {/* PORTAL CARDS */}
+        <div style={{ marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
+            <h2 style={{ fontSize: '0.925rem', fontWeight: 600, color: 'var(--text-primary)' }}>Portais Integrados</h2>
+            <button className="btn btn-primary" style={{ fontSize: '0.78rem' }} disabled={otimizando} onClick={otimizarComIA}>
+              <Cpu size={13} /> {otimizando ? 'Otimizando...' : 'Otimizar com IA'}
+            </button>
+          </div>
+          <div className={styles.portaisGrid}>
+            {mockPortais.map(p => <PortalCard key={p.slug} portal={p} onAdicionar={adicionarDestaque} />)}
+          </div>
+        </div>
+
+        {/* ACTIVE HIGHLIGHTS — grade completa, separada por nível */}
+        {([
+          { key: 'super_destaque', label: '⭐ Super Destaque', color: '#fb923c', desc: 'Topo da busca, maior visibilidade — reservado para os imóveis de maior score de prioridade.' },
+          { key: 'destaque_premium', label: '✦ Destaque Premium', color: '#a78bfa', desc: 'Posição privilegiada, um nível abaixo do Super Destaque.' },
+          { key: 'destaque', label: '▸ Destaque', color: 'var(--text-secondary)', desc: 'Destaque padrão — sinalizado nos resultados de busca dos portais.' },
+        ] as { key: keyof typeof destaquesByType; label: string; color: string; desc: string }[]).map(tier => {
+          const lista = [...destaquesByType[tier.key]].sort((a, b) => b.score_ia - a.score_ia);
+          if (lista.length === 0) return null;
+          return (
+            <div className="card" key={tier.key} style={{ marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                <h2 style={{ fontSize: '0.925rem', fontWeight: 600, color: tier.color }}>
+                  {tier.label}
+                </h2>
+                <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{lista.length} imóveis</span>
+              </div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>{tier.desc}</p>
+              <div className="table-container">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Imóvel</th>
+                      <th>Portal</th>
+                      <th>Farol</th>
+                      <th>Qualidade</th>
+                      <th>Score IA</th>
+                      <th>Leads</th>
+                      <th>Visualizações</th>
+                      <th>ROI</th>
+                      <th>Custo</th>
+                      <th>Validade</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lista.map((dest) => (
+                      <tr key={dest.id}>
+                        <td>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                              {dest.imovel.titulo}
+                            </div>
+                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                              {dest.imovel.bairro} · {formatCurrency(dest.imovel.preco_atual)}{dest.imovel.finalidade === 'aluguel' ? '/mês' : ''}
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{
+                            background: `${portalColors[dest.portal] || '#6366f1'}20`,
+                            color: portalColors[dest.portal] || '#6366f1',
+                            border: `1px solid ${portalColors[dest.portal] || '#6366f1'}40`,
+                            borderRadius: 4,
+                            padding: '2px 6px',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                          }}>
+                            {dest.portal}
+                          </span>
+                        </td>
+                        <td><FarolBadge status={dest.imovel.status_farol} finalidade={dest.imovel.finalidade} size="sm" showDot={false} /></td>
+                        <td style={{ minWidth: 100 }}>
+                          <QualityBar score={dest.imovel.nota_qualidade} size="sm" showLabel={false} />
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <div className="progress-track" style={{ width: 36 }}>
+                              <div className="progress-fill" style={{
+                                width: `${dest.score_ia}%`,
+                                background: dest.score_ia >= 80 ? '#22c55e' : '#f59e0b',
+                              }} />
+                            </div>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: dest.score_ia >= 80 ? '#22c55e' : '#f59e0b' }}>
+                              {dest.score_ia}
+                            </span>
+                          </div>
+                        </td>
+                        <td style={{ fontWeight: 600, color: '#22c55e' }}>{dest.leads_gerados}</td>
+                        <td style={{ fontVariantNumeric: 'tabular-nums' }}>{formatNumber(dest.visualizacoes_geradas)}</td>
+                        <td>
+                          <span style={{
+                            fontWeight: 700,
+                            fontSize: '0.85rem',
+                            color: dest.roi_estimado >= 3 ? '#22c55e' : dest.roi_estimado >= 1.5 ? '#f59e0b' : '#ef4444',
+                          }}>
+                            {dest.roi_estimado.toFixed(1)}x
+                          </span>
+                        </td>
+                        <td style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(dest.custo)}</td>
+                        <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          até {dest.data_fim}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })}
+
+      </div>
+    </>
+  );
+}

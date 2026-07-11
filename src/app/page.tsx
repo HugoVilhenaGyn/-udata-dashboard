@@ -209,4 +209,31 @@ export default function HomePage() {
             {/* XML Status */}
             <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
               <div className={styles.sectionHeader} style={{ marginBottom: '0.625rem' }}>
-                <span style={{ fontS
+                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Cargas XML recentes</span>
+              </div>
+              {mockCargasXML.map((carga) => (
+                <div key={carga.id} className={styles.cargaRow}>
+                  {carga.status === 'concluido' ? (
+                    <CheckCircle2 size={13} color="#22c55e" />
+                  ) : carga.status === 'processando' ? (
+                    <Clock size={13} color="#f59e0b" />
+                  ) : (
+                    <AlertCircle size={13} color="#ef4444" />
+                  )}
+                  <span className={styles.cargaPortal}>{carga.portal.toUpperCase()}</span>
+                  <span className={styles.cargaInfo}>{carga.imoveis_processados}/{carga.imoveis_total} imóveis</span>
+                  <span className={styles.cargaStatus} style={{
+                    color: carga.status === 'concluido' ? '#22c55e' : carga.status === 'processando' ? '#f59e0b' : '#ef4444',
+                  }}>
+                    {carga.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </>
+  );
+}

@@ -1,0 +1,77 @@
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: all var(--transition-base);
+  cursor: default;
+}
+
+.card:hover {
+  border-color: rgba(99, 102, 241, 0.2);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.cardAccent {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(129, 140, 248, 0.04));
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.iconWrap {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.change {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+.changePos { color: var(--farol-iminente); }
+.changeNeg { color: var(--farol-baixo); }
+.changeNeutral { color: var(--text-muted); }
+
+.changeLabel {
+  color: var(--text-muted);
+  font-weight: 400;
+}

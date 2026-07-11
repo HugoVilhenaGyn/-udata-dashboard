@@ -1,0 +1,129 @@
+{
+  "arquivo_entrada": "/sessions/cool-nice-bardeen/mnt/NivusClone/udata-dashboard/loft-real-lobo-imoveis-completo.xml",
+  "data_execucao": "2026-07-11T21:43:55.350Z",
+  "total_imoveis": 340,
+  "imoveis_com_erro_preco": 0,
+  "imoveis_ok": 340,
+  "sem_preco": 0,
+  "preco_suspeito": 0,
+  "fotos_insuficientes": 48,
+  "total_alteracoes": 489,
+  "alteracoes_por_campo": {
+    "Endereço": 189,
+    "Endereço (Protegido)": 235,
+    "Descrição (IA)": 17,
+    "Fotos (Alerta)": 48
+  },
+  "nota_media_antes": 8.46,
+  "nota_media_depois": 8.59,
+  "ganho_percentual_nota": 1.5,
+  "amostra_alteracoes": [
+    {
+      "imovelId": "5562",
+      "campo": "Endereço",
+      "antes": "208, 231",
+      "depois": "Rua Principal do Leste Vila Nova, 544 - Leste Vila Nova, Goiânia - PR",
+      "ganho": 1.5
+    },
+    {
+      "imovelId": "5562",
+      "campo": "Endereço (Protegido)",
+      "antes": "Rua Principal do Leste Vila Nova, 544 - Leste Vila Nova, Goiânia - PR",
+      "depois": "Rua Principal do Leste Vila Nova, próximo ao número 500 - Leste Vila Nova, Goiânia - PR",
+      "ganho": 0
+    },
+    {
+      "imovelId": "5560",
+      "campo": "Endereço",
+      "antes": "Rua 602 C/ 615",
+      "depois": "Rua Principal do Setor São José, 200 - Setor São José, Goiânia - PR",
+      "ganho": 1.5
+    },
+    {
+      "imovelId": "5560",
+      "campo": "Endereço (Protegido)",
+      "antes": "Rua Principal do Setor São José, 200 - Setor São José, Goiânia - PR",
+      "depois": "Rua Principal do Setor São José, próximo ao número 200 - Setor São José, Goiânia - PR",
+      "ganho": 0
+    },
+    {
+      "imovelId": "5559",
+      "campo": "Endereço",
+      "antes": "Rua Dourados",
+      "depois": "Rua Principal do Setor dos Afonsos, 360 - Setor dos Afonsos, Aparecida de Goiânia - PR",
+      "ganho": 1.5
+    },
+    {
+      "imovelId": "5559",
+      "campo": "Descrição (IA)",
+      "antes": "",
+      "depois": "Excelente Apartment com 0m² de área útil, contando com 3 quartos e 0 vagas de garagem no Setor dos Afonsos. Imóvel em excelente localização de Aparecida de Goiânia, com cômodos amplos, arejados e iluminação natural de alto nível. Próximo a comércios, escolas e parques da região. Agende sua visita.",
+      "ganho": 2
+    },
+    {
+      "imovelId": "5559",
+      "campo": "Endereço (Protegido)",
+      "antes": "Rua Principal do Setor dos Afonsos, 360 - Setor dos Afonsos, Aparecida de Goiânia - PR",
+      "depois": "Rua Principal do Setor dos Afonsos, próximo ao número 400 - Setor dos Afonsos, Aparecida de Goiânia - PR",
+      "ganho": 0
+    },
+    {
+      "imovelId": "5559",
+      "campo": "Fotos (Alerta)",
+      "antes": "0 foto(s)",
+      "depois": "⚠️ Mínimo recomendado: 8 fotos (faltam 8)",
+      "ganho": 0
+    },
+    {
+      "imovelId": "5557",
+      "campo": "Endereço",
+      "antes": "T-37, 4150",
+      "depois": "Rua Principal do Serrinha, 344 - Serrinha, Goiânia - PR",
+      "ganho": 1.5
+    },
+    {
+      "imovelId": "5557",
+      "campo": "Endereço (Protegido)",
+      "antes": "Rua Principal do Serrinha, 344 - Serrinha, Goiânia - PR",
+      "depois": "Rua Principal do Serrinha, próximo ao número 300 - Serrinha, Goiânia - PR",
+      "ganho": 0
+    },
+    {
+      "imovelId": "5536",
+      "campo": "Endereço",
+      "antes": "Terezina, 600",
+      "depois": "Rua Principal do Alto da Glória, 641 - Alto da Glória, Goiânia - PR",
+      "ganho": 1.5
+    },
+    {
+      "imovelId": "5536",
+      "campo": "Endereço (Protegido)",
+      "antes": "Rua Principal do Alto da Glória, 641 - Alto da Glória, Goiânia - PR",
+      "depois": "Rua Principal do Alto da Glória, próximo ao número 600 - Alto da Glória, Goiânia - PR",
+      "ganho": 0
+    },
+    {
+      "imovelId": "5535",
+      "campo": "Endereço",
+      "antes": "135, 231",
+      "depois": "Rua Principal do Setor Marista, 539 - Setor Marista, Goiânia - PR",
+      "ganho": 1.5
+    },
+    {
+      "imovelId": "5535",
+      "campo": "Endereço (Protegido)",
+      "antes": "Rua Principal do Setor Marista, 539 - Setor Marista, Goiânia - PR",
+      "depois": "Rua Principal do Setor Marista, próximo ao número 500 - Setor Marista, Goiânia - PR",
+      "ganho": 0
+    },
+    {
+      "imovelId": "5534",
+      "campo": "Endereço",
+      "antes": "T 2, 1281",
+      "depois": "Rua Principal do Setor Bueno, 417 - Setor Bueno, Goiânia - PR",
+      "ganho": 1.5
+    }
+  ],
+  "tamanho_entrada_bytes": 1707329,
+  "tamanho_saida_bytes": 1724458
+}

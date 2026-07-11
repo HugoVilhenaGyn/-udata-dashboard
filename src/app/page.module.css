@@ -1,0 +1,194 @@
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.bottomGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.sectionTitle {
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.badge {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 0.2rem 0.625rem;
+}
+
+/* Farol stats */
+.farolStats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.farolStat {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.farolDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.farolLabel {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.farolValue {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Imóvel list */
+.imovelList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.imovelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.imovelRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.imovelInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.imovelTitulo {
+  font-size: 0.825rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.imovelBairro {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.imovelQuality {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  min-width: 140px;
+}
+
+/* Alert list */
+.alertList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.alertRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.5rem;
+  background: rgba(239, 68, 68, 0.04);
+  border: 1px solid rgba(239, 68, 68, 0.1);
+  border-radius: var(--radius-sm);
+}
+
+.alertInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.alertTitulo {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alertSub {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Carga XML rows */
+.cargaRow {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cargaRow:last-child {
+  border-bottom: none;
+}
+
+.cargaPortal {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  width: 50px;
+}
+
+.cargaInfo {
+  flex: 1;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.cargaStatus {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}

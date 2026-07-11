@@ -1,0 +1,36 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.track {
+  width: 100%;
+  background: var(--bg-elevated);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.score {
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}

@@ -1,0 +1,254 @@
+.distributionGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.distCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  transition: all var(--transition-base);
+}
+
+.distCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.distCount {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.distLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0.2rem 0;
+}
+
+.distRange {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Filters */
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.filterBtns {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Imovel list */
+.imovelList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.imovelCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color var(--transition-base);
+}
+
+.imovelCard:hover {
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.imovelHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  width: 100%;
+  text-align: left;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--transition-fast);
+}
+
+.imovelHeader:hover {
+  background: var(--bg-elevated);
+}
+
+.imovelThumb {
+  width: 52px;
+  height: 42px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.imovelThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imovelMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.imovelTitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.imovelSub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.scoreBlock {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.scoreNum {
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.scoreDen {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.barBlock {
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.gainBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--farol-potencial);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 100px;
+  padding: 0.2rem 0.625rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.criterioSummary {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.criterioMiniDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: block;
+}
+
+/* Expanded section */
+.criteriosList {
+  border-top: 1px solid var(--border);
+  padding: 1rem 1.25rem;
+  background: var(--bg-elevated);
+}
+
+.criteriosGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.criterioRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+}
+
+.criterioMissing {
+  background: rgba(239, 68, 68, 0.04);
+  border-color: rgba(239, 68, 68, 0.15);
+}
+
+.criterioIcon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.criterioInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.criterioLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.criterioSugestao {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.criterioPontos {
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Enrich action */
+.enrichAction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: var(--radius-md);
+}
+
+.enrichInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}

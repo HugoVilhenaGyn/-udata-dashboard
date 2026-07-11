@@ -1,0 +1,70 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { verifySessionToken } from './lib/auth-service';
+
+// Definição de permissões de rotas por cargo
+const ROLE_PERMISSIONS: Record<string, string[]> = {
+  ADMIN: ['/', '/copiloto', '/farol', '/inventario', '/qualidade', '/receita', '/destaques', '/xml', '/configuracoes'],
+  MARKETING: ['/', '/copiloto', '/farol', '/inventario', '/qualidade', '/destaques', '/configuracoes'],
+  CORRETOR: ['/', '/copiloto', '/farol', '/inventario', '/qualidade', '/configuracoes'],
+};
+
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // Ignorar arquivos estáticos, assets, favicon e chamadas à API de auth
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api/auth') ||
+    pathname.includes('.') ||
+    pathname === '/favicon.ico'
+  ) {
+    return NextResponse.next();
+  }
+
+  const token = req.cookies.get('udata_session')?.value;
+
+  // Se não estiver logado e tentar acessar qualquer rota privada
+  if (!token && pathname !== '/login' && pathname !== '/acesso-negado') {
+    const loginUrl = new URL('/login', req.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Se estiver logado e tentar ir para /login
+  if (token && pathname === '/login') {
+    const homeUrl = new URL('/', req.url);
+    return NextResponse.redirect(homeUrl);
+  }
+
+  // Se estiver logado, verificar permissões do cargo
+  if (token && pathname !== '/login' && pathname !== '/acesso-negado') {
+    const session = await verifySessionToken(token);
+
+    // Se o token for inválido
+    if (!session) {
+      const loginUrl = new URL('/login', req.url);
+      const response = NextResponse.redirect(loginUrl);
+      response.cookies.delete('udata_session');
+      return response;
+    }
+
+    const cargo = session.cargo;
+    const allowedRoutes = ROLE_PERMISSIONS[cargo] || ['/'];
+
+    // Se tentar acessar uma rota que não está na lista de permissão do cargo
+    const isAllowed = allowedRoutes.some(
+      route => pathname === route || pathname.startsWith(`${route}/`)
+    );
+
+    if (!isAllowed) {
+      const accessDeniedUrl = new URL('/acesso-negado', req.url);
+      return NextResponse.redirect(accessDeniedUrl);
+    }
+  }
+
+  return NextResponse.next();
+}
+
+// Configurações do matcher para rodar nas rotas principais
+export const config = {
+  matcher: 

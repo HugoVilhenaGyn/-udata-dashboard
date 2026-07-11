@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListingDataFeed xmlns="http://www.vivareal.com/schemas/1.0/VRSync"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:schemaLocation="http://www.vivareal.com/schemas/1.0/VRSync  http://xml.vivareal.com/vrsync.xsd">
+   <Header>
+       <Provider>Desenvolvedor do Feed</Provider>
+       <Email>desenvolvefeed@feed.com.br</Email>
+       <ContactName>Nome do Cliente</ContactName>
+       <PublishDate>2026-07-11T17:47:57</PublishDate>
+       <Telephone>11-3450 4646</Telephone>
+   </Header>
+   <Listings>
+     <Listing>
+      <ListingID>AP001</ListingID>
+      <Title>Lindo Apartamento a venda em São Paulo</Title>
+      <TransactionType>For Sale</TransactionType>
+      <PublicationType>STANDARD</PublicationType>
+      <DetailViewUrl>http://www.grupozap.com.br/imoveis/AP001</DetailViewUrl>
+      <Media>
+          <Item medium="image" caption="img1" primary="true">http://grupozap.com.br/foto01_152900.jpg</Item>
+          <Item medium="image" caption="img02">http://grupozap.com.br/foto02_1529463900.jpg</Item>
+          <Item medium="image" caption="img03">http://grupozap.com.br/foto03_1529463900.jpg</Item>
+      </Media>
+      <Details>
+          <UsageType>Residential</UsageType>
+          <PropertyType>Residential / Apartment</PropertyType>
+          <Description><![CDATA[O apartamento de 80 metros quadrados no bairro Consolação com 2 quartos e 1 banheiro. A alguns minutos de shoppings, supermercados, escolas. O apartamento vai lhe possibilitar curtir os dias mais quentes na piscina. Sistema de segurança e quadra poliesportiva. Elevador. Academia. Condomínio protegido por muros.]]></Description>
+          <ListPrice currency="BRL">860000</ListPrice>
+          <LivingArea unit="square metres">80</LivingArea>
+          <PropertyAdministrationFee currency="BRL">980</PropertyAdministrationFee>
+          <YearlyTax currency="BRL">4500</YearlyTax>
+          <Bedrooms>2</Bedrooms>
+          <Bathrooms>1</Bathrooms>
+          <Suites>1</Suites>
+          <Garage type="Parking Space">2</Garage>
+      </Details>
+      <Location displayAddress="All">
+          <Country abbreviation="BR">Brasil</Country>
+          <State abbreviation="SP">Sao Paulo</State>
+          <City>São Paulo</City>
+          <Zone>Zona Sul</Zone>
+          <Neighborhood>Consolação</Neighborhood>
+          <Address>Rua Bela Cintra</Address>
+          <StreetNumber>539</StreetNumber>
+          <Complement>APT 21</Complement>
+          <PostalCode>01415-003</PostalCode>
+          <Latitude>-23.5531131</Latitude>
+          <Longitude>-46.659864</Longitude>
+      </Location>
+      <ContactInfo>
+          <Name>Imobiliaria Feliz</Name>
+          <Email>contato@imobiliariafeliz.com.br</Email>
+          <Website>http://www.imobiliariafeliz.com.br</Website>
+          <Telephone>(11) 3150-4646</Telephone>
+      </ContactInfo>
+     </Listing>
+     <Listing>
+      <ListingID>SL001</ListingID>
+      <Title>Sala Comercial para aluguel possui 35 metros quadrados em Rio Pequeno - São Paulo - SP.</Title>
+      <TransactionType>For Rent</TransactionType>
+      <PublicationType>STANDARD</PublicationType>
+      <DetailViewUrl>http://www.grupozap.com.br/imoveis/SL001</DetailViewUrl>
+      <Media>
+          <Item medium="image" caption="img1" primary="true">http://grupozap.com.br/foto01_152900.jpg</Item>
+      </Media>
+      <Details>
+          <UsageType>Commercial</UsageType>
+          <PropertyType>Commercial / Office</PropertyType>
+          <Description><![CDATA[A sala comercial de 35 metros quadrados no bairro Rio Pequeno e 1 banheiro.]]></Description>
+          <RentalPrice currency="BRL" period="Monthly">2500</RentalPrice>
+          <LivingArea unit="square metres">35</LivingArea>
+          <PropertyAdministrationFee currency="BRL">680</PropertyAdministrationFee>
+          <YearlyTax currency="BRL">4500</YearlyTax>
+          <Bathrooms>1</Bathrooms>
+          <Garage type="Parking Space">2</Garage>
+      </Details>
+      <Location displayAddress="Street">
+          <Country abbreviation="BR">Brasil</Country>
+          <State abbreviation="SP">Sao Paulo</State>
+          <City>São Paulo</City>
+          <Neighborhood>Rio Pequeno</Neighborhood>
+          <Address>Rua João da Silva Sauro</Address>
+          <StreetNumber>98</StreetNumber>
+          <Complement>APT 46</Complement>
+          <PostalCode>05863-024</PostalCode>
+          <Latitude>-23.5531131</Latitude>
+          <Longitude>-46.659864</Longitude>
+      </Location>
+      <ContactInfo>
+          <Name>Imobiliaria Feliz</Name>
+          <Email>contato@imobiliariafeliz.com.br</Email>
+          <Website>http://www.imobiliariafeliz.com.br</Website>
+          <Telephone>(11) 3150-4646</Telephone>
+      </ContactInfo>
+     </Listing>
+     <Listing>
+      <ListingID>AP002</ListingID>
+      <Title></Title>
+      <TransactionType>Sale/Rent</TransactionType>
+      <PublicationType>PREMIUM</PublicationType>
+      <DetailViewUrl>http://www.grupozap.com.br/imoveis/AP002</DetailViewUrl>
+      <Media>
+          <Item medium="image" caption="img1" primary="true">http://grupozap.com.br/foto01_152900.jpg</Item>
+      </Media>
+      <Details>
+          <UsageType>Residential</UsageType>
+          <PropertyType>Residential / Apartment</PropertyType>
+          <Description>Apto</Description>
+          <ListPrice currency="BRL">780000</ListPrice>
+          <RentalPrice currency="BRL" period="Monthly">2750</RentalPrice>
+          <PropertyAdministrationFee currency="BRL">1250</PropertyAdministrationFee>
+          <YearlyTax currency="BRL">3800</YearlyTax>
+          <LivingArea unit="square metres">80</LivingArea>
+          <LotArea unit="square metres">95</LotArea>
+          <Bedrooms>3</Bedrooms>
+          <Bathrooms>3</Bathrooms>
+          <Suites>2</Suites>
+          <Garage type="Parking Space">2</Garage>
+      </Details>
+      <Location displayAddress="Neighborhood">
+          <Country abbreviation="BR">Brasil</Country>
+          <State abbreviation="SP">Sao Paulo</State>
+          <City>São Paulo</City>
+          <Neighborhood>Rio Pequeno</Neighborhood>
+          <Address>Avenida Escola Politécnica</Address>
+          <StreetNumber>980</StreetNumber>
+          <Complement>APT 81</Complement>
+          <PostalCode>05350-090</PostalCode>
+          <Latitude>-23.5531131</Latitude>
+          <Longitude>-46.659864</Longitude>
+      </Location>
+      <ContactInfo>
+          <Name>Imobiliaria Feliz</Name>
+          <Email>contato@imobiliariafeliz.com.br</Email>
+          <Website>http://www.imobiliariafeliz.com.br</Website>
+          <Telephone>(11) 3150-4646</Telephone>
+      </ContactInfo>
+     </Listing>
+   </Listings>
+</ListingDataFeed>

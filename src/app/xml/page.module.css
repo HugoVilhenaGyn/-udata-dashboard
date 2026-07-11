@@ -1,0 +1,326 @@
+.topSection {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: stretch;
+}
+
+.cardTitle {
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.cardDesc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-top: 0.875rem;
+}
+
+.impactGrid {
+  display: flex;
+  gap: 1rem;
+}
+
+.impactCard {
+  flex: 1;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  text-align: center;
+  transition: transform var(--transition-fast);
+}
+
+.impactCard:hover {
+  transform: translateY(-2px);
+}
+
+.impactValue {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--farol-iminente);
+  letter-spacing: -0.02em;
+}
+
+.impactLabel {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Rules List */
+.rulesList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.ruleItem {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  align-items: flex-start;
+  transition: all var(--transition-fast);
+}
+
+.ruleItem:hover {
+  border-color: var(--border-active);
+  background: var(--bg-card-hover);
+}
+
+.ruleCheckbox {
+  margin-top: 4px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.ruleMeta {
+  flex: 1;
+}
+
+.ruleName {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  justify-content: space-between;
+}
+
+.ruleImpact {
+  color: var(--farol-potencial);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.ruleDesc {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+/* Actions */
+.actionRow {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  align-items: center;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Editor Workspace */
+.workspaceGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.editorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.editorLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.fileSize, .successBadge {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.successBadge {
+  color: var(--farol-iminente);
+  font-weight: 600;
+}
+
+.editor {
+  width: 100%;
+  height: 380px;
+  background: #08080d;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: #a5b4fc;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.8rem;
+  padding: 1rem;
+  resize: none;
+  line-height: 1.5;
+  outline: none;
+}
+
+.editor:focus {
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.enriched {
+  color: #34d399;
+}
+
+.emptyEditor {
+  height: 380px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  padding: 2rem;
+}
+
+/* Logs and Changes */
+.changesGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.changeItem {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+}
+
+.changeMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.changeImovel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.changeField {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary-hover);
+}
+
+.changePts {
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.changeDiff {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-left: 2px solid var(--border);
+  padding-left: 0.75rem;
+}
+
+.diffAntes, .diffDepois {
+  font-size: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.diffLabel {
+  color: var(--text-muted);
+  font-weight: 500;
+  width: 45px;
+}
+
+.diffAntes code {
+  color: #ef4444;
+}
+
+.diffDepois code {
+  color: #34d399;
+}
+
+.noChanges {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 1rem;
+}
+
+.consoleBox {
+  background: #040406;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  height: 140px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.consoleLine {
+  margin-bottom: 4px;
+}
+
+.consoleTime {
+  color: var(--text-muted);
+}
+
+/* Connect XML and Upload Styles */
+.connectGrid {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.urlForm {
+  flex: 1;
+  min-width: 320px;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.dividerOr {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.uploadBox {
+  width: 300px;
+  flex-shrink: 0;
+}
+

@@ -1,0 +1,118 @@
+.kpiRow {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.kpiMini {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem;
+}
+
+.kpiVal {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.kpiLbl {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Portais Grid */
+.portaisGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.portalCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  transition: all var(--transition-base);
+}
+
+.portalCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.portalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.portalBadge {
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+}
+
+.portalStatus {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.portalName {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.portalFormat {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.portalMetrics {
+  display: flex;
+  gap: 1rem;
+  margin: 0.25rem 0;
+}
+
+.portalMetric {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.metricLabel {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.cpl {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.5rem;
+}
+
+.budgetBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.budgetRow {
+  display: flex;
+  justify-content: space-between;
+}

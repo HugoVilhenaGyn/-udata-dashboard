@@ -1,0 +1,44 @@
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.sortable {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.imovelCell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.imovelThumb {
+  width: 44px;
+  height: 36px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+}
+
+.imovelThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}

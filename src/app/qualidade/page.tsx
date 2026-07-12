@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import Header from '@/components/layout/Header';
 import QualityBar from '@/components/ui/QualityBar';
 import FarolBadge from '@/components/ui/FarolBadge';
-import { mockImoveis, formatCurrency, qualidadeColor } from '@/lib/mock-data';
+import { mockImoveis, formatCurrency, qualidadeColor, codigoImovel } from '@/lib/mock-data';
 import { Imovel, CriterioQualidade } from '@/lib/types';
 import {
   Star, CheckCircle2, XCircle, AlertCircle, ChevronDown, ChevronUp, Wand2, MapPin,
@@ -152,7 +152,12 @@ export default function QualidadePage() {
                   </div>
 
                   <div className={styles.imovelMeta}>
-                    <div className={styles.imovelTitle}>{imovel.titulo}</div>
+                    <div className={styles.imovelTitle}>
+                      {imovel.titulo}
+                      <span style={{ marginLeft: 8, fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {codigoImovel(imovel.id_externo)}
+                      </span>
+                    </div>
                     <div className={styles.imovelSub}>
                       {imovel.bairro} · {formatCurrency(imovel.preco_atual)}
                       {imovel.finalidade === 'aluguel' ? '/mês' : ''}

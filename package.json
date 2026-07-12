@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync:vista": "node scripts/sync-vista-full-feed.mjs",
+    "sync:vista:zap": "node scripts/sync-vista-zap-feed.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

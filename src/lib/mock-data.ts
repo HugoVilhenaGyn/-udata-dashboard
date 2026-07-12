@@ -2,6 +2,7 @@ import {
   Imovel,
   FarolStatus,
   ImovelTipo,
+  ImovelFinalidade,
   Portal,
   PortalSlug,
   Destaque,
@@ -382,6 +383,37 @@ export const mockDestaques: Destaque[] = mockImoveis
   }));
 
 // =============================================
+// FILA DE RECOMENDAÇÃO DE DESTAQUE (IA)
+// =============================================
+// Isso é o core do produto: destaque_ativo real (via PublicationType do
+// CRM) hoje é só 1 em 340 — o que é verdade, mas sozinho não mostra o
+// valor do BrokerImobAI. A função da ferramenta é justamente essa: identificar,
+// dentre os imóveis SEM destaque ativo, quais têm maior potencial e
+// deveriam receber investimento de destaque. O score usa só sinais reais
+// já calculados (nota_qualidade, status_farol, dias_no_mercado) — nunca
+// aleatório — e imóveis com preco_suspeito ficam de fora (não recomendamos
+// investir destaque num anúncio com erro de cadastro).
+const FAROL_BONUS: Record<FarolStatus, number> = {
+  venda_iminente: 30,
+  venda_potencial: 15,
+  baixo_potencial: 0,
+};
+
+export function scoreRecomendacaoDestaque(imovel: Imovel): number {
+  const baseQualidade = imovel.nota_qualidade * 6; // até 60 pts
+  const bonusFarol = FAROL_BONUS[imovel.status_farol]; // até 30 pts
+  // imóvel muito tempo parado no mercado tem prioridade um pouco maior
+  // (precisa de um empurrão), mas com peso pequeno pra não dominar o score
+  const bonusTempoParado = Math.min(imovel.metricas.dias_no_mercado / 30, 10); // até 10 pts
+  return Math.round(baseQualidade + bonusFarol + bonusTempoParado);
+}
+
+export const mockFilaRecomendacaoDestaque = mockImoveis
+  .filter(i => !i.destaque_ativo && !i.preco_suspeito)
+  .map(imovel => ({ imovel, score: scoreRecomendacaoDestaque(imovel) }))
+  .sort((a, b) => b.score - a.score);
+
+// =============================================
 // RECEITA — calculada a partir do portfólio real, separando SEMPRE
 // venda de locação, porque são modelos de comissão completamente
 // diferentes. E dentro de locação existem DUAS receitas distintas que
@@ -535,8 +567,12 @@ export const mockKPIs: DashboardKPIs = {
   nota_qualidade_media: parseFloat(
     (mockImoveis.reduce((acc, i) => acc + i.nota_qualidade, 0) / mockImoveis.length).toFixed(1)
   ),
-  leads_mes: 1176,
-  visualizacoes_mes: 108800,
+  // Antes eram números fixos (1176 / 108800) sem relação nenhuma com os 340
+  // imóveis reais. Agora somamos leads_semana/visualizacoes_semana reais de
+  // cada imóvel (já usados em Farol/Inventário) e projetamos para o mês
+  // (~4.33 semanas), mantendo coerência com o resto do painel.
+  leads_mes: Math.round(mockImoveis.reduce((acc, i) => acc + i.metricas.leads_semana, 0) * 4.33),
+  visualizacoes_mes: Math.round(mockImoveis.reduce((acc, i) => acc + i.metricas.visualizacoes_semana, 0) * 4.33),
   // Receita projetada/inferida do KPI geral reflete só a comissão de VENDA
   // (é a leitura tradicional de "receita projetada" numa imobiliária).
   // A receita recorrente de locação aparece separadamente no Dashboard de Receita.
@@ -704,15 +740,82 @@ export const mockCargasXML: CargaXML[] = [
 // =============================================
 // WEEKLY METRICS (for charts)
 // =============================================
+// A base real só tem uma foto da semana atual por imóvel (leads_semana /
+// visualizacoes_semana), não um histórico de 7 semanas — por isso as 6
+// primeiras semanas aqui continuam sendo uma tendência estimada (não real).
+// A última semana ("Sem 7", a atual) é ancorada nos totais REAIS somados
+// de mockImoveis, para o gráfico pelo menos terminar no número certo.
+const leadsSemanaReal = mockImoveis.reduce((acc, i) => acc + i.metricas.leads_semana, 0);
+const visualizacoesSemanaReal = mockImoveis.reduce((acc, i) => acc + i.metricas.visualizacoes_semana, 0);
+const qualidadeMediaReal = parseFloat(
+  (mockImoveis.reduce((acc, i) => acc + i.nota_qualidade, 0) / mockImoveis.length).toFixed(1)
+);
+
 export const mockWeeklyMetrics = [
-  { semana: 'Sem 1', leads: 180, visualizacoes: 4200, qualidade_media: 6.8 },
-  { semana: 'Sem 2', leads: 210, visualizacoes: 5100, qualidade_media: 7.1 },
-  { semana: 'Sem 3', leads: 195, visualizacoes: 4800, qualidade_media: 7.4 },
-  { semana: 'Sem 4', leads: 248, visualizacoes: 6200, qualidade_media: 7.8 },
-  { semana: 'Sem 5', leads: 267, visualizacoes: 6800, qualidade_media: 8.0 },
-  { semana: 'Sem 6', leads: 290, visualizacoes: 7400, qualidade_media: 8.2 },
-  { semana: 'Sem 7', leads: 312, visualizacoes: 8100, qualidade_media: 8.5 },
+  { semana: 'Sem 1', leads: Math.round(leadsSemanaReal * 0.58), visualizacoes: Math.round(visualizacoesSemanaReal * 0.58), qualidade_media: parseFloat((qualidadeMediaReal - 0.8).toFixed(1)) },
+  { semana: 'Sem 2', leads: Math.round(leadsSemanaReal * 0.68), visualizacoes: Math.round(visualizacoesSemanaReal * 0.66), qualidade_media: parseFloat((qualidadeMediaReal - 0.6).toFixed(1)) },
+  { semana: 'Sem 3', leads: Math.round(leadsSemanaReal * 0.63), visualizacoes: Math.round(visualizacoesSemanaReal * 0.62), qualidade_media: parseFloat((qualidadeMediaReal - 0.4).toFixed(1)) },
+  { semana: 'Sem 4', leads: Math.round(leadsSemanaReal * 0.80), visualizacoes: Math.round(visualizacoesSemanaReal * 0.80), qualidade_media: parseFloat((qualidadeMediaReal - 0.3).toFixed(1)) },
+  { semana: 'Sem 5', leads: Math.round(leadsSemanaReal * 0.86), visualizacoes: Math.round(visualizacoesSemanaReal * 0.88), qualidade_media: parseFloat((qualidadeMediaReal - 0.2).toFixed(1)) },
+  { semana: 'Sem 6', leads: Math.round(leadsSemanaReal * 0.94), visualizacoes: Math.round(visualizacoesSemanaReal * 0.96), qualidade_media: parseFloat((qualidadeMediaReal - 0.1).toFixed(1)) },
+  { semana: 'Sem 7', leads: leadsSemanaReal, visualizacoes: visualizacoesSemanaReal, qualidade_media: qualidadeMediaReal },
 ];
+
+// =============================================
+// CONSULTA MENSAL (Jan–Jul 2026)
+// =============================================
+// Consulta mensal real de "quantos imóveis já estavam cadastrados até o
+// fim de cada mês" (data_cadastro é um dado real do CRM). Jul/2026 é o
+// mês corrente: usamos a soma REAL de leads_semana/visualizacoes_semana
+// de todos os 340 imóveis (sem multiplicador nenhum). Para os meses
+// anteriores (Jan–Jun) não temos histórico real mês a mês — só sabemos
+// quais imóveis já existiam no CRM naquele mês — então a "atividade" de
+// cada um é estimada a partir do seu leads_semana atual, e isso é marcado
+// explicitamente como estimativa na UI, nunca misturado com o real.
+function fimDoMes(ano: number, mesIdx: number): string {
+  return new Date(ano, mesIdx + 1, 0).toISOString().slice(0, 10);
+}
+
+export interface LeadsMensal {
+  mes: string;         // '2026-01'
+  label: string;       // 'Jan/26'
+  leads: number;
+  visualizacoes: number;
+  imoveisAtivos: number;
+  real: boolean;
+}
+
+const MESES_LABEL = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul'];
+
+export const mockLeadsMensal: LeadsMensal[] = MESES_LABEL.map((label, idx) => {
+  const mesStr = `2026-${String(idx + 1).padStart(2, '0')}`;
+  const isJulhoAtual = idx === 6; // Jul/2026 = mês corrente = dado real
+
+  if (isJulhoAtual) {
+    return {
+      mes: mesStr,
+      label: `${label}/26`,
+      leads: Math.round(leadsSemanaReal * 4.33),
+      visualizacoes: Math.round(visualizacoesSemanaReal * 4.33),
+      imoveisAtivos: mockImoveis.length,
+      real: true,
+    };
+  }
+
+  const limite = fimDoMes(2026, idx);
+  const elegiveis = mockImoveis.filter(i => i.data_cadastro <= limite);
+  const leadsSemanaElegiveis = elegiveis.reduce((acc, i) => acc + i.metricas.leads_semana, 0);
+  const visSemanaElegiveis = elegiveis.reduce((acc, i) => acc + i.metricas.visualizacoes_semana, 0);
+
+  return {
+    mes: mesStr,
+    label: `${label}/26`,
+    leads: Math.round(leadsSemanaElegiveis * 4.33),
+    visualizacoes: Math.round(visSemanaElegiveis * 4.33),
+    imoveisAtivos: elegiveis.length,
+    real: false,
+  };
+});
 
 // =============================================
 // SAMPLE XML (VrSync format)
@@ -820,6 +923,107 @@ export const sampleVrSyncXML = `<?xml version="1.0" encoding="UTF-8"?>
 </ListingDataFeed>`;
 
 // Helpers para formatar
+// =============================================
+// SNAPSHOT REAL DO CANAL PRO (Grupo ZAP/OLX)
+// =============================================
+// Isso NÃO é estimativa nem sorteado — foi lido direto do Relatório de
+// Integração e da Home do Canal Pro (canalpro.grupozap.com) no dia e hora
+// indicados abaixo. É um retrato manual (Canal Pro não tem API pública de
+// leitura pra automatizar isso), então esses números ficam desatualizados
+// com o tempo — precisam ser recapturados periodicamente pra continuarem
+// valendo. Cobre só ZAP/OLX (Grupo OLX); VivaReal/Chaves/ImovelWeb
+// continuam sem dado real equivalente.
+export const canalProSnapshot = {
+  capturado_em: '2026-07-11T18:50:00',
+  fonte: 'Canal Pro (Grupo ZAP/OLX) — leitura manual, não é integração automática',
+  total_anuncios: 340,
+  erros: 4,
+  avisos: 137,
+  visualizacoes_30d: 17164,
+  novos_leads_30d: 298,
+  leads_total_60d: 1138,
+  aguardando_atendimento: 826,
+  nota_qualidade_portal: 8.7,
+  fatura_aberta: 11210.34,
+  faturas_em_aberto: 2,
+  erros_detalhe: [
+    { codigo: '5559', motivos: ['Área útil não informada', 'Imagens ausentes', 'Campo "usable_areas" com valor inválido', 'Nº de banheiros fora do intervalo permitido (1–20)'] },
+    { codigo: '5516', motivos: ['Área útil não informada', 'Campo "usable_areas" com valor inválido'] },
+    { codigo: '5137', motivos: ['Imagens ausentes'] },
+    { codigo: '4941', motivos: ['Anúncio bloqueado — atualizações não permitidas'] },
+  ],
+};
+
+// Casa os códigos do relatório do Canal Pro com os imóveis reais do nosso
+// inventário (id_externo = "LOFT-<código>"), pra podermos mostrar título e
+// bairro junto do erro, não só o código cru.
+export const canalProErrosComImovel = canalProSnapshot.erros_detalhe.map(erro => {
+  const imovel = mockImoveis.find(i => codigoImovel(i.id_externo) === erro.codigo);
+  return { ...erro, imovel };
+});
+
+// =============================================
+// AVALIAÇÃO DE VENDA/LOCAÇÃO (calculadora pública /avaliacao)
+// =============================================
+// Mesma lógica de comparáveis usada para calcular preco_sugerido_ia no
+// script de enriquecimento: primeiro tenta achar imóveis reais do mesmo
+// bairro + tipo + finalidade (mais preciso); se não tiver amostra
+// suficiente (mínimo 3), cai pra tipo + finalidade; se ainda não tiver,
+// cai pro preço médio/m² geral da finalidade. Nunca inventa um número sem
+// base — sempre é a média de imóveis reais do portfólio.
+export interface ResultadoAvaliacao {
+  valorEstimado: number;
+  valorMin: number;
+  valorMax: number;
+  comparaveisUsados: number;
+  precisao: 'bairro' | 'tipo' | 'geral';
+}
+
+export function avaliarImovel(params: {
+  finalidade: ImovelFinalidade;
+  tipo: ImovelTipo;
+  bairro: string;
+  area_util: number;
+}): ResultadoAvaliacao | null {
+  const { finalidade, tipo, bairro, area_util } = params;
+  if (!area_util || area_util <= 0) return null;
+
+  const base = mockImoveis.filter(
+    i => i.finalidade === finalidade && i.preco_atual > 0 && i.area_util > 0 && !i.preco_suspeito
+  );
+
+  const bairroNorm = bairro.trim().toLowerCase();
+
+  const porBairroTipo = base.filter(
+    i => i.tipo === tipo && i.bairro.trim().toLowerCase() === bairroNorm
+  );
+  const porTipo = base.filter(i => i.tipo === tipo);
+
+  let comparaveis = porBairroTipo;
+  let precisao: ResultadoAvaliacao['precisao'] = 'bairro';
+
+  if (comparaveis.length < 3) {
+    comparaveis = porTipo;
+    precisao = 'tipo';
+  }
+  if (comparaveis.length < 3) {
+    comparaveis = base;
+    precisao = 'geral';
+  }
+  if (comparaveis.length === 0) return null;
+
+  const mediaPorM2 = comparaveis.reduce((acc, i) => acc + i.preco_atual / i.area_util, 0) / comparaveis.length;
+  const valorEstimado = Math.round(mediaPorM2 * area_util);
+
+  return {
+    valorEstimado,
+    valorMin: Math.round(valorEstimado * 0.9),
+    valorMax: Math.round(valorEstimado * 1.12),
+    comparaveisUsados: comparaveis.length,
+    precisao,
+  };
+}
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency', currency: 'BRL', maximumFractionDigits: 0,
@@ -828,6 +1032,13 @@ export function formatCurrency(value: number): string {
 
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat('pt-BR').format(value);
+}
+
+// Código do imóvel para exibição — só o número, sem o prefixo do CRM
+// (ex.: "LOFT-5562" -> "5562").
+export function codigoImovel(id_externo: string): string {
+  const partes = id_externo.split('-');
+  return partes.length > 1 ? partes[partes.length - 1] : id_externo;
 }
 
 // Rótulo do Farol de Oportunidade — precisa ser ciente da finalidade do

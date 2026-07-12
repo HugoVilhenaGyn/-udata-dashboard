@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import Header from '@/components/layout/Header';
 import FarolBadge from '@/components/ui/FarolBadge';
 import QualityBar from '@/components/ui/QualityBar';
-import { mockImoveis, formatCurrency, formatNumber } from '@/lib/mock-data';
+import { mockImoveis, formatCurrency, formatNumber, codigoImovel } from '@/lib/mock-data';
 import { FarolStatus, ImovelTipo } from '@/lib/types';
 import {
   Search, SlidersHorizontal, Download, Eye, Users, Calendar, ChevronUp, ChevronDown, Star, AlertTriangle,
@@ -32,7 +32,7 @@ export default function InventarioPage() {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <ListingDataFeed>
   <Header>
-    <Provider>UDATA</Provider>
+    <Provider>BrokerImobAI</Provider>
     <ListingCount>${imoveis.length}</ListingCount>
     <Timestamp>${new Date().toISOString()}</Timestamp>
   </Header>
@@ -188,7 +188,7 @@ ${imoveis.map(i => `    <Listing>
                         <div className="td-primary" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                           {imovel.titulo}
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{imovel.id_externo}</div>
+                        <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-primary)' }}>{codigoImovel(imovel.id_externo)}</div>
                       </div>
                     </div>
                   </td>

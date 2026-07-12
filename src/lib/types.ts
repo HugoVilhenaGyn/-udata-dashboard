@@ -1,5 +1,5 @@
 // =============================================
-// UDATA — TypeScript Type Definitions
+// BrokerImobAI — TypeScript Type Definitions
 // =============================================
 
 // --- Enums ---
@@ -196,6 +196,8 @@ export interface Destaque {
   roi_estimado: number;        // (leads_gerados * ticket_medio) / custo
   status: 'ativo' | 'expirado' | 'agendado';
   score_ia: number;            // score de prioridade dado pela IA (0-100)
+  criado_por?: string;         // nome de quem tomou a decisão (auditoria)
+  criado_em?: string;          // timestamp ISO de quando foi registrado
 }
 
 // --- Revenue ---

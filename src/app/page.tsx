@@ -1,22 +1,32 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import Header from '@/components/layout/Header';
 import KpiCard from '@/components/ui/KpiCard';
 import FarolPieChart from '@/components/charts/FarolPieChart';
-import LeadsChart from '@/components/charts/LeadsChart';
 import RevenueChart from '@/components/charts/RevenueChart';
 import FarolBadge from '@/components/ui/FarolBadge';
 import QualityBar from '@/components/ui/QualityBar';
 import {
-  mockKPIs, mockImoveis, mockWeeklyMetrics, mockRevenueData, mockCargasXML,
-  mockImobiliaria, receitaResumo, formatCurrency, formatNumber,
+  mockKPIs, mockImoveis, mockRevenueData, mockCargasXML,
+  mockImobiliaria, mockLeadsMensal, receitaResumo, formatCurrency, formatNumber,
+  canalProSnapshot,
 } from '@/lib/mock-data';
 import {
-  Building2, Users, Eye, TrendingUp, Star, FileCode2, Zap, AlertCircle, CheckCircle2, Clock, KeyRound, Handshake,
+  Building2, TrendingUp, Star, FileCode2, Zap, AlertCircle, CheckCircle2, Clock, KeyRound, Handshake, Eye, Users,
 } from 'lucide-react';
 import styles from './page.module.css';
 
+const PERIOD_OPTIONS = mockLeadsMensal.map(m => ({ value: m.mes, label: `${m.label}` }));
+
 export default function HomePage() {
+  const [mesSelecionado, setMesSelecionado] = useState(mockLeadsMensal[mockLeadsMensal.length - 1].mes);
+
+  const dadosMes = useMemo(
+    () => mockLeadsMensal.find(m => m.mes === mesSelecionado) || mockLeadsMensal[mockLeadsMensal.length - 1],
+    [mesSelecionado]
+  );
+
   const topImoveis = [...mockImoveis]
     .sort((a, b) => b.nota_qualidade - a.nota_qualidade)
     .slice(0, 6);
@@ -29,7 +39,10 @@ export default function HomePage() {
     <>
       <Header
         title="Visão Geral"
-        subtitle={`${mockImobiliaria.nome} · Julho 2026`}
+        subtitle={`${mockImobiliaria.nome} · ${dadosMes.label}`}
+        periodOptions={PERIOD_OPTIONS}
+        selectedPeriod={mesSelecionado}
+        onPeriodChange={setMesSelecionado}
       />
       <div className="page-body animate-fadeIn">
 
@@ -37,24 +50,11 @@ export default function HomePage() {
         <div className="kpi-grid stagger">
           <KpiCard
             title="Total de Imóveis"
-            value={formatNumber(mockKPIs.total_imoveis)}
-            change={4.2}
+            value={formatNumber(dadosMes.imoveisAtivos)}
+            change={dadosMes.real ? 4.2 : undefined}
             icon={Building2}
             iconColor="#6366f1"
-          />
-          <KpiCard
-            title="Leads no Mês"
-            value={formatNumber(mockKPIs.leads_mes)}
-            change={12.8}
-            icon={Users}
-            iconColor="#22c55e"
-          />
-          <KpiCard
-            title="Visualizações"
-            value={formatNumber(mockKPIs.visualizacoes_mes)}
-            change={8.3}
-            icon={Eye}
-            iconColor="#f59e0b"
+            subtitle={dadosMes.real ? undefined : `cadastrados até ${dadosMes.label}`}
           />
           <KpiCard
             title="Comissão Venda (inferida)"
@@ -116,9 +116,29 @@ export default function HomePage() {
           <div className="card">
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>Leads &amp; Visualizações</h2>
-              <span className={styles.badge}>Últimas 7 semanas</span>
+              <span className={styles.badge} style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>Real · Canal Pro</span>
             </div>
-            <LeadsChart data={mockWeeklyMetrics} />
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '0.25rem 0 0.75rem' }}>
+              Capturado direto do Canal Pro (Grupo ZAP/OLX) em {new Date(canalProSnapshot.capturado_em).toLocaleString('pt-BR')}.
+              Leitura manual — ainda não é integração automática, então esse número não se atualiza sozinho.
+            </p>
+            <div className={styles.farolStats} style={{ marginTop: 0 }}>
+              <div className={styles.farolStat}>
+                <Eye size={14} color="#6366f1" />
+                <span className={styles.farolLabel}>Visualizações (30 dias)</span>
+                <span className={styles.farolValue}>{formatNumber(canalProSnapshot.visualizacoes_30d)}</span>
+              </div>
+              <div className={styles.farolStat}>
+                <Users size={14} color="#22c55e" />
+                <span className={styles.farolLabel}>Novos leads (30 dias)</span>
+                <span className={styles.farolValue}>{formatNumber(canalProSnapshot.novos_leads_30d)}</span>
+              </div>
+              <div className={styles.farolStat}>
+                <AlertCircle size={14} color="#f59e0b" />
+                <span className={styles.farolLabel}>Aguardando atendimento</span>
+                <span className={styles.farolValue}>{formatNumber(canalProSnapshot.aguardando_atendimento)}</span>
+              </div>
+            </div>
           </div>
 
           <div className="card">

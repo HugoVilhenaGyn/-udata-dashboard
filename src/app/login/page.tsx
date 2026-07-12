@@ -70,7 +70,7 @@ export default function LoginPage() {
             </svg>
           </div>
           <div>
-            <h1 className={styles.logoText}>UDATA</h1>
+            <h1 className={styles.logoText}>BrokerImobAI</h1>
             <p className={styles.logoSub}>Inteligência Imobiliária</p>
           </div>
         </div>
@@ -93,7 +93,7 @@ export default function LoginPage() {
               <Mail size={15} className={styles.inputIcon} />
               <input
                 type="email"
-                placeholder="nome@udata.com"
+                placeholder="hugo.f.vilhena@gmail.com"
                 className={styles.input}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -136,30 +136,30 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Demo Credentials Picker */}
+        {/* Contas reais da LOBO IMOVEIS */}
         <div className={styles.demoSection}>
           <div className={styles.demoTitle}>
             <Shield size={12} />
-            Escolha uma Persona de Teste:
+            Contas da LOBO IMOVEIS:
           </div>
           <div className={styles.demoBtns}>
             <button
-              onClick={() => preencherCredenciais('admin@udata.com', 'admin123')}
+              onClick={() => preencherCredenciais('hugo.f.vilhena@gmail.com', 'Lobo@2026')}
               className={styles.demoBtn}
             >
-              👑 Admin (Total)
+              👑 Hugo Vilhena (Admin)
             </button>
             <button
-              onClick={() => preencherCredenciais('corretor@udata.com', 'corretor123')}
+              onClick={() => preencherCredenciais('atendimento@loboimoveis.imb.br', 'Lobo@2026')}
               className={styles.demoBtn}
             >
-              👤 Broker (Corretor)
+              👤 Equipe Comercial (Corretor)
             </button>
             <button
-              onClick={() => preencherCredenciais('marketing@udata.com', 'marketing123')}
+              onClick={() => preencherCredenciais('marketing@loboimoveis.imb.br', 'Lobo@2026')}
               className={styles.demoBtn}
             >
-              📣 Growth (Marketing)
+              📣 Equipe Marketing (Growth)
             </button>
           </div>
         </div>

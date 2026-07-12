@@ -7,14 +7,26 @@ import { mockImobiliaria } from '@/lib/mock-data';
 import { UserSession } from '@/lib/auth-service';
 import styles from './Header.module.css';
 
+interface PeriodOption {
+  value: string;
+  label: string;
+}
+
 interface HeaderProps {
   title: string;
   subtitle?: string;
+  // Seletor de período (mês) — opcional. Se não for passado, mostra
+  // "Julho 2026" fixo (comportamento antigo, decorativo) para não quebrar
+  // páginas que ainda não têm um mês selecionável.
+  periodOptions?: PeriodOption[];
+  selectedPeriod?: string;
+  onPeriodChange?: (value: string) => void;
 }
 
-export default function Header({ title, subtitle }: HeaderProps) {
+export default function Header({ title, subtitle, periodOptions, selectedPeriod, onPeriodChange }: HeaderProps) {
   const [user, setUser] = useState<UserSession | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [periodOpen, setPeriodOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -85,10 +97,40 @@ export default function Header({ title, subtitle }: HeaderProps) {
         </div>
 
         {/* Period selector */}
-        <button className={styles.periodBtn}>
-          <span>Julho 2026</span>
-          <ChevronDown size={14} />
-        </button>
+        {periodOptions && periodOptions.length > 0 ? (
+          <div style={{ position: 'relative' }}>
+            <button className={styles.periodBtn} onClick={() => setPeriodOpen(!periodOpen)}>
+              <span>{periodOptions.find(p => p.value === selectedPeriod)?.label || periodOptions[periodOptions.length - 1].label}</span>
+              <ChevronDown size={14} />
+            </button>
+            {periodOpen && (
+              <div className={styles.dropdownMenu} style={{ minWidth: 140 }}>
+                {periodOptions.map(opt => (
+                  <button
+                    key={opt.value}
+                    className={styles.dropdownItem}
+                    style={{
+                      justifyContent: 'space-between',
+                      fontWeight: opt.value === selectedPeriod ? 700 : 400,
+                      color: opt.value === selectedPeriod ? 'var(--primary-hover)' : undefined,
+                    }}
+                    onClick={() => {
+                      onPeriodChange?.(opt.value);
+                      setPeriodOpen(false);
+                    }}
+                  >
+                    <span>{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <button className={styles.periodBtn}>
+            <span>Julho 2026</span>
+            <ChevronDown size={14} />
+          </button>
+        )}
 
         {/* Notifications */}
         <button className={styles.iconBtn} data-tooltip="Notificações">

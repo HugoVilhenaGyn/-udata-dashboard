@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import Header from '@/components/layout/Header';
 import FarolBadge from '@/components/ui/FarolBadge';
 import QualityBar from '@/components/ui/QualityBar';
-import { mockImoveis, formatCurrency, formatNumber } from '@/lib/mock-data';
+import { mockImoveis, formatCurrency, formatNumber, codigoImovel } from '@/lib/mock-data';
 import { FarolStatus, ImovelTipo, ImovelFinalidade } from '@/lib/types';
 import {
   Lightbulb, TrendingUp, Clock, TrendingDown, Filter, Eye, Users, ArrowUpRight, ChevronRight,
@@ -249,6 +249,7 @@ export default function FarolPage() {
                       <span className="badge badge-primary" style={{ fontSize: '0.65rem' }}>⚡ Destaque</span>
                     )}
                   </div>
+                  <span className={styles.cardCode}>{codigoImovel(imovel.id_externo)}</span>
                 </div>
 
                 {/* Info */}

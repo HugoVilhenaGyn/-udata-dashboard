@@ -38,7 +38,7 @@ export default function CopilotoPage() {
     {
       id: 'welcome',
       sender: 'ai',
-      text: `Olá! Sou a Inteligência de Orquestração da UDATA. Analisei todo o seu inventário de imóveis (${mockImoveis.length} anúncios), os canais de feeds XML e as regras de precificação. \n\nComo posso ajudar você a otimizar a performance comercial do seu portfólio hoje?`,
+      text: `Olá! Sou a Inteligência de Orquestração da BrokerImobAI. Analisei todo o seu inventário de imóveis (${mockImoveis.length} anúncios), os canais de feeds XML e as regras de precificação. \n\nComo posso ajudar você a otimizar a performance comercial do seu portfólio hoje?`,
       timestamp: new Date().toLocaleTimeString().slice(0, 5),
     },
   ]);
@@ -220,7 +220,7 @@ export default function CopilotoPage() {
                 <Cpu size={20} color="var(--primary-hover)" />
               </div>
               <div>
-                <div className={styles.agentName}>Orquestrador UDATA</div>
+                <div className={styles.agentName}>Orquestrador BrokerImobAI</div>
                 <div className={styles.agentStatusText}>Online · Estudando XML</div>
               </div>
             </div>

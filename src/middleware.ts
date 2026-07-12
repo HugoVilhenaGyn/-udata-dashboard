@@ -4,21 +4,32 @@ import { verifySessionToken } from './lib/auth-service';
 
 // Definição de permissões de rotas por cargo
 const ROLE_PERMISSIONS: Record<string, string[]> = {
-  ADMIN: ['/', '/copiloto', '/farol', '/inventario', '/qualidade', '/receita', '/destaques', '/xml', '/configuracoes'],
-  MARKETING: ['/', '/copiloto', '/farol', '/inventario', '/qualidade', '/destaques', '/configuracoes'],
+  ADMIN: ['/', '/copiloto', '/farol', '/inventario', '/qualidade', '/receita', '/destaques', '/xml', '/avaliacao-admin', '/configuracoes'],
+  MARKETING: ['/', '/copiloto', '/farol', '/inventario', '/qualidade', '/destaques', '/avaliacao-admin', '/configuracoes'],
   CORRETOR: ['/', '/copiloto', '/farol', '/inventario', '/qualidade', '/configuracoes'],
 };
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Ignorar arquivos estáticos, assets, favicon e chamadas à API de auth
+  // Ignorar arquivos estáticos, assets, favicon e chamadas de API. Rotas de
+  // API não fazem parte do ROLE_PERMISSIONS (são endpoints, não páginas) —
+  // sem isso, QUALQUER chamada a /api/* (mesmo do Admin) era redirecionada
+  // para /acesso-negado pelo bloco de permissão abaixo, retornando HTML no
+  // lugar do JSON esperado. Cada rota de API cuida da própria autenticação.
   if (
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/') ||
     pathname.includes('.') ||
     pathname === '/favicon.ico'
   ) {
+    return NextResponse.next();
+  }
+
+  // /avaliacao é a landing page pública de avaliação de venda/locação —
+  // fica fora do login de propósito, é pra visitante do site, não pra
+  // equipe da imobiliária.
+  if (pathname === '/avaliacao' || pathname.startsWith('/avaliacao/')) {
     return NextResponse.next();
   }
 

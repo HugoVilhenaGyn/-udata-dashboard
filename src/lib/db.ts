@@ -16,12 +16,49 @@ export interface User {
   imobiliariaNome: string;
 }
 
+export interface LeadAvaliacao {
+  id: string;
+  nome: string;
+  telefone: string;
+  email: string;
+  finalidade: 'venda' | 'aluguel';
+  tipo: string;
+  bairro: string;
+  area_util: number;
+  quartos: number;
+  mensagem?: string;
+  valor_estimado: number;
+  valor_min: number;
+  valor_max: number;
+  comparaveis_usados: number;
+  criado_em: string;
+  status: 'novo' | 'em_atendimento' | 'atendido';
+}
+
+export interface ConfigAvaliacao {
+  ativo: boolean;
+  telefoneContato: string;
+  tituloHero: string;
+  mensagemHero: string;
+  mensagemIndisponivel: string;
+}
+
+export const CONFIG_AVALIACAO_PADRAO: ConfigAvaliacao = {
+  ativo: true,
+  telefoneContato: '62 3018.2500',
+  tituloHero: 'Quanto vale o seu imóvel?',
+  mensagemHero: 'Avaliação gratuita baseada em imóveis reais do nosso portfólio na sua região — preencha seus dados e o do imóvel para ver o resultado do estudo de mercado.',
+  mensagemIndisponivel: 'A avaliação online está temporariamente indisponível. Fale direto com a gente pelo telefone abaixo.',
+};
+
 export interface DbSchema {
   users: User[];
   imoveis: typeof mockImoveis;
   portais: typeof mockPortais;
   destaques: typeof mockDestaques;
   revenue: typeof mockRevenueData;
+  leadsAvaliacao: LeadAvaliacao[];
+  configAvaliacao: ConfigAvaliacao;
 }
 
 // Inicializar e garantir que o banco existe
@@ -36,28 +73,28 @@ export function initDb() {
     
     const users: User[] = [
       {
-        id: 'usr-admin',
-        nome: 'Renato Silva (Admin)',
-        email: 'admin@udata.com',
-        senhaHash: bcrypt.hashSync('admin123', salt),
+        id: 'usr-hugo',
+        nome: 'Hugo Vilhena',
+        email: 'hugo.f.vilhena@gmail.com',
+        senhaHash: bcrypt.hashSync('Lobo@2026', salt),
         cargo: 'ADMIN',
         imobiliariaId: 'imob-001',
         imobiliariaNome: 'LOBO IMOVEIS',
       },
       {
-        id: 'usr-corretor',
-        nome: 'Amanda Souza (Broker)',
-        email: 'corretor@udata.com',
-        senhaHash: bcrypt.hashSync('corretor123', salt),
+        id: 'usr-comercial',
+        nome: 'Equipe Comercial',
+        email: 'atendimento@loboimoveis.imb.br',
+        senhaHash: bcrypt.hashSync('Lobo@2026', salt),
         cargo: 'CORRETOR',
         imobiliariaId: 'imob-001',
         imobiliariaNome: 'LOBO IMOVEIS',
       },
       {
         id: 'usr-marketing',
-        nome: 'Carlos Santos (Growth)',
-        email: 'marketing@udata.com',
-        senhaHash: bcrypt.hashSync('marketing123', salt),
+        nome: 'Equipe Marketing',
+        email: 'marketing@loboimoveis.imb.br',
+        senhaHash: bcrypt.hashSync('Lobo@2026', salt),
         cargo: 'MARKETING',
         imobiliariaId: 'imob-001',
         imobiliariaNome: 'LOBO IMOVEIS',
@@ -70,6 +107,8 @@ export function initDb() {
       portais: mockPortais,
       destaques: mockDestaques,
       revenue: mockRevenueData,
+      leadsAvaliacao: [],
+      configAvaliacao: CONFIG_AVALIACAO_PADRAO,
     };
 
     fs.writeFileSync(DB_FILE, JSON.stringify(initialDb, null, 2), 'utf-8');
@@ -80,7 +119,11 @@ export function initDb() {
 export function readDb(): DbSchema {
   initDb();
   const raw = fs.readFileSync(DB_FILE, 'utf-8');
-  return JSON.parse(raw);
+  const data = JSON.parse(raw);
+  // Backfill pra bancos criados antes desses campos existirem.
+  if (!Array.isArray(data.leadsAvaliacao)) data.leadsAvaliacao = [];
+  if (!data.configAvaliacao) data.configAvaliacao = CONFIG_AVALIACAO_PADRAO;
+  return data;
 }
 
 // Salvar no banco

@@ -13,6 +13,7 @@ import {
   Zap,
   ChevronRight,
   Brain,
+  Calculator,
 } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
@@ -25,6 +26,7 @@ const navItems = [
   { href: '/receita', label: 'Dashboard de Receita', icon: BarChart3 },
   { href: '/destaques', label: 'Gestão de Destaques', icon: Zap },
   { href: '/xml', label: 'Motor de XML', icon: FileCode2 },
+  { href: '/avaliacao-admin', label: 'Avaliação Online', icon: Calculator },
 ];
 
 export default function Sidebar() {
@@ -42,7 +44,7 @@ export default function Sidebar() {
           </svg>
         </div>
         <div>
-          <span className={styles.logoText}>UDATA</span>
+          <span className={styles.logoText}>BrokerImobAI</span>
           <span className={styles.logoSub}>Inteligência Imobiliária</span>
         </div>
       </div>

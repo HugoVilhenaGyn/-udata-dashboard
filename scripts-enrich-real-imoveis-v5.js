@@ -193,15 +193,41 @@ const brutos = listings.map((listing, i) => {
     nota_qualidade: nota,
     criterios_qualidade: criterios,
     portais_publicados: ['zap', 'olx', rnd() > 0.5 ? 'vivareal' : 'chaves'].slice(0, Math.floor(rnd() * 3) + 1),
-    metricas: {
-      visualizacoes_total: Math.floor(rnd() * 3000) + 50,
-      leads_total: Math.floor(rnd() * 60),
-      visualizacoes_semana: Math.floor(rnd() * 100) + 5,
-      leads_semana: Math.floor(rnd() * 10),
-      taxa_conversao: parseFloat((rnd() * 7 + 0.5).toFixed(1)),
-      dias_no_mercado: diasMercado,
-      posicao_ranking: Math.floor(rnd() * 50) + 1,
-    },
+    // Métricas coerentes entre si (antes eram sorteadas de forma
+    // independente: dava pra um imóvel ter 27 leads no total dos últimos
+    // ~40 semanas no mercado, mas 9 leads só NESSA semana — estatisticamente
+    // impossível, e isso inflava a soma mensal do portfólio pra um valor
+    // irreal). Agora: visualizacoes_semana e taxa_conversao (realistas para
+    // o setor) determinam leads_semana; o total é visualizacoes_semana
+    // multiplicado pelas semanas no mercado (com variação), e leads_total
+    // deriva da mesma taxa_conversao sobre o total de visualizações — então
+    // semana e total sempre batem entre si.
+    metricas: (function () {
+      const semanasNoMercado = Math.max(1, diasMercado / 7);
+      // Benchmark real de portal imobiliário: a maioria dos anúncios recebe
+      // poucas visualizações/leads por semana; poucos "estouram".
+      const visualizacoesSemana = Math.floor(rnd() * 22) + 3; // 3–24 visualizações/semana
+      const taxaConversao = parseFloat((rnd() * 4 + 1).toFixed(1)); // 1.0%–5.0%
+      const leadsSemana = Math.round(visualizacoesSemana * (taxaConversao / 100));
+      const variacaoTotal = 0.75 + rnd() * 0.5; // 0.75x–1.25x, tempo não é perfeitamente linear
+      const visualizacoesTotal = Math.max(
+        visualizacoesSemana,
+        Math.round(visualizacoesSemana * semanasNoMercado * variacaoTotal)
+      );
+      const leadsTotal = Math.max(
+        leadsSemana,
+        Math.round(visualizacoesTotal * (taxaConversao / 100))
+      );
+      return {
+        visualizacoes_total: visualizacoesTotal,
+        leads_total: leadsTotal,
+        visualizacoes_semana: visualizacoesSemana,
+        leads_semana: leadsSemana,
+        taxa_conversao: taxaConversao,
+        dias_no_mercado: diasMercado,
+        posicao_ranking: Math.floor(rnd() * 50) + 1,
+      };
+    })(),
     regras_aplicadas: [],
     data_cadastro: isoDateMinusDays(diasMercado),
     data_atualizacao: isoDateMinusDays(Math.floor(rnd() * 7)),

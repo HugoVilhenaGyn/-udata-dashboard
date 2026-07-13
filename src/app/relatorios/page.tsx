@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import { FileText, ClipboardList } from 'lucide-react';
@@ -33,6 +33,17 @@ const TIPO_LABEL: Record<RelatorioLisa['tipo'], string> = {
 };
 
 export default function RelatoriosPage() {
+  return (
+    <Suspense fallback={null}>
+      <RelatoriosPageContent />
+    </Suspense>
+  );
+}
+
+// useSearchParams() precisa estar dentro de um Suspense boundary pro Next
+// conseguir gerar a página estaticamente no build — sem isso o build
+// quebra com "should be wrapped in a suspense boundary".
+function RelatoriosPageContent() {
   const searchParams = useSearchParams();
   const idNaUrl = searchParams.get('id');
   const [relatorios, setRelatorios] = useState<RelatorioLisa[]>([]);

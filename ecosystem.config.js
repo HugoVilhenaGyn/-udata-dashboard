@@ -4,10 +4,12 @@
 //   pm2 start ecosystem.config.js
 //   pm2 save && pm2 startup   (pra sobreviver a reboot do servidor)
 //
-// Porta 3001 (não 3000) de propósito: esse VPS já tem outra aplicação
-// rodando em imobai.net.br, o BrokerImobAI convive num subdomínio
-// (painel.imobai.net.br) — ver DEPLOY.md. Se 3001 também já estiver em
-// uso por outra coisa nesse servidor, troque aqui e no bloco Nginx.
+// Porta 3002 de propósito: esse VPS já tem outra aplicação (não gerenciada
+// por PM2) ocupando a 3001 (a que hoje responde por imobai.net.br) — 3000
+// também está ocupada. O BrokerImobAI assume o domínio raiz imobai.net.br
+// via Nginx (proxy_pass pra 3002) e a app antiga passa a responder só por
+// crm.imobai.net.br — ver DEPLOY.md. Se 3002 também já estiver em uso,
+// troque aqui e no bloco Nginx.
 module.exports = {
   apps: [
     {
@@ -17,7 +19,7 @@ module.exports = {
       cwd: __dirname,
       env: {
         NODE_ENV: 'production',
-        PORT: 3001,
+        PORT: 3002,
       },
       instances: 1,
       autorestart: true,

@@ -1,11 +1,11 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  // "standalone" empacota só o necessário pra rodar em produção (server.js
-  // + node_modules mínimos) — é o que o Dockerfile usa pra gerar uma imagem
-  // enxuta pro deploy no VPS, em vez de copiar o repo inteiro + node_modules
-  // completo pra dentro do container.
-  output: 'standalone',
-};
+// Sem "output: standalone" de propósito: o caminho de deploy real é PM2 +
+// "next start" direto no VPS (ver DEPLOY.md), não Docker. "standalone" só
+// funciona com "node .next/standalone/server.js", não com "next start" — os
+// dois modos são incompatíveis. O Dockerfile/docker-compose continuam no
+// repo como alternativa não usada, mas o next.config.ts segue o modo padrão
+// pra bater com o que o ecosystem.config.js (PM2) realmente roda.
+const nextConfig: NextConfig = {};
 
 export default nextConfig;

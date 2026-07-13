@@ -23,9 +23,11 @@ Anote: qual arquivo de config Nginx responde por `imobai.net.br` hoje, e em
 qual porta/pasta a aplicação atual está servindo. Vai precisar disso no
 passo 5.
 
-O BrokerImobAI vai rodar na **porta 3001** (já configurado em
-`ecosystem.config.js`) — confirme no `ss -tlnp` acima que 3001 está livre;
-se não estiver, troque a porta lá e no passo 6.
+O BrokerImobAI vai rodar na **porta 3002** (já configurado em
+`ecosystem.config.js`) — a 3000 e a 3001 costumam já estar ocupadas nesse
+VPS por outras aplicações (a 3001 é a que hoje serve `imobai.net.br`).
+Confirme no `ss -tlnp` acima que 3002 está livre; se não estiver, troque a
+porta lá e no passo 6.
 
 ## 1. Criar o banco (Supabase)
 
@@ -94,7 +96,7 @@ npm run db:migrate    # importa os 340 imóveis reais etc. pro Supabase — só 
 npm run build
 ```
 
-## 5. Subir o BrokerImobAI com PM2 (porta 3001) — sem tocar na app atual ainda
+## 5. Subir o BrokerImobAI com PM2 (porta 3002) — sem tocar na app atual ainda
 
 ```bash
 pm2 start ecosystem.config.js
@@ -103,7 +105,7 @@ pm2 status   # confirme "broker-imob-ai" online, sem derrubar o processo da app 
 ```
 
 Nesse ponto as duas aplicações estão rodando ao mesmo tempo no servidor
-(porta antiga + porta 3001), só o Nginx ainda não foi trocado — nada mudou
+(porta antiga + porta 3002), só o Nginx ainda não foi trocado — nada mudou
 pro visitante ainda.
 
 ## 6. Migrar a config do Nginx (o passo que faz a troca de verdade)
@@ -128,7 +130,7 @@ server {
     server_name imobai.net.br www.imobai.net.br;
 
     location / {
-        proxy_pass http://localhost:3001;
+        proxy_pass http://localhost:3002;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -186,9 +188,9 @@ crontab -e
 ## Troubleshooting
 
 - **Quero testar antes de trocar o Nginx de verdade**: acesse
-  `http://SEU_IP:3001` direto (sem domínio) pra conferir que o BrokerImobAI
+  `http://SEU_IP:3002` direto (sem domínio) pra conferir que o BrokerImobAI
   está de pé antes de fazer o passo 6.
-- **Porta 3001 já em uso**: troque em `ecosystem.config.js` e no
+- **Porta 3002 já em uso**: troque em `ecosystem.config.js` e no
   `proxy_pass` do passo 6.
 - **"DATABASE_URL não configurada"**: falta preencher `.env` ou exportar as
   variáveis (`export $(grep -v '^#' .env | xargs)`).

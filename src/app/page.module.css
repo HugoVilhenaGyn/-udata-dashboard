@@ -1,8 +1,14 @@
 .chartsGrid {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 380px 380px;
   gap: 1rem;
   margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1400px) {
+  .chartsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .bottomGrid {

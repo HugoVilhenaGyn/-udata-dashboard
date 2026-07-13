@@ -1,10 +1,44 @@
-import fs from 'fs';
-import path from 'path';
 import bcrypt from 'bcryptjs';
+import { Pool } from 'pg';
 import { mockImoveis, mockPortais, mockDestaques, mockRevenueData } from './mock-data';
 
-const DB_DIR = path.join(process.cwd(), 'src', 'data');
-const DB_FILE = path.join(DB_DIR, 'db.json');
+// =============================================
+// BACKEND — Postgres (Supabase) via pool `pg`
+// =============================================
+// Antes disso o "banco" era um arquivo db.json no disco (só funciona rodando
+// direto num servidor com disco persistente — quebra em serverless e não é
+// um backend de verdade). Agora o estado inteiro da aplicação vive numa
+// única linha JSONB (tabela app_state) no Postgres. Isso preserva a MESMA
+// forma de uso (readDb()/writeDb()) que todas as rotas de API já usavam,
+// só que agora assíncrona e apontando pra um banco real — sem precisar
+// reescrever 15+ entidades em tabelas relacionais numa migração só.
+// Ver DEPLOY.md pra como provisionar o Postgres (Supabase) e configurar
+// DATABASE_URL.
+
+let pool: Pool | null = null;
+
+function getPool(): Pool {
+  if (pool) return pool;
+
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error(
+      'DATABASE_URL não configurada. Defina no .env.local (dev) ou nas variáveis de ambiente do servidor (produção) — ver DEPLOY.md.'
+    );
+  }
+
+  pool = new Pool({
+    connectionString,
+    // Supabase (e a maioria dos Postgres gerenciados) exige TLS, mas com
+    // certificado que o driver `pg` não valida por padrão nesse cenário de
+    // conexão direta. `rejectUnauthorized: false` é o ajuste padrão
+    // recomendado pelo próprio Supabase pra conexão via node-postgres.
+    ssl: process.env.DATABASE_SSL === 'false' ? undefined : { rejectUnauthorized: false },
+    max: 5,
+  });
+
+  return pool;
+}
 
 export interface User {
   id: string;
@@ -51,6 +85,58 @@ export const CONFIG_AVALIACAO_PADRAO: ConfigAvaliacao = {
   mensagemIndisponivel: 'A avaliação online está temporariamente indisponível. Fale direto com a gente pelo telefone abaixo.',
 };
 
+// Documento de pesquisa de mercado (RAG) enviado pela equipe — ex: prints/
+// exports de anúncios do Portal 62 e do Zap, pra Lisa cruzar com o
+// portfólio real na hora de montar um estudo de mercado. O texto extraído
+// do arquivo fica salvo aqui e é injetado (truncado) no prompt da Lisa.
+export interface DocumentoRag {
+  id: string;
+  nome: string;
+  fonte: 'portal62' | 'zap' | 'outro';
+  conteudo: string;
+  tamanho: number;
+  enviado_em: string;
+  enviado_por?: string;
+}
+
+// Instruções permanentes de treinamento da Lisa (Orquestrador IA) — texto
+// livre escrito pela equipe, injetado no system prompt em toda chamada ao
+// Gemini. Permite ajustar tom, regras de negócio e prioridades sem mexer
+// em código.
+export interface ConfigOrquestrador {
+  instrucoes: string;
+  documentos: DocumentoRag[];
+  atualizado_em?: string;
+  atualizado_por?: string;
+}
+
+export const CONFIG_ORQUESTRADOR_PADRAO: ConfigOrquestrador = {
+  instrucoes: '',
+  documentos: [],
+};
+
+// Relatório estruturado que a Lisa gera sob demanda (ferramenta
+// "gerar_relatorio") — fica salvo pra revisão posterior, não é só uma
+// mensagem de chat que some quando a conversa rola. Cada seção pode ter
+// texto e/ou uma tabela simples (colunas + linhas, tudo como texto).
+export interface RelatorioSecao {
+  titulo: string;
+  texto?: string;
+  colunas?: string[];
+  linhas?: string[][];
+}
+
+export interface RelatorioLisa {
+  id: string;
+  titulo: string;
+  tipo: 'qualidade' | 'precificacao' | 'oportunidade' | 'destaques' | 'geral';
+  resumo: string;
+  secoes: RelatorioSecao[];
+  pergunta_origem: string;
+  criado_em: string;
+  criado_por?: string;
+}
+
 export interface DbSchema {
   users: User[];
   imoveis: typeof mockImoveis;
@@ -59,77 +145,119 @@ export interface DbSchema {
   revenue: typeof mockRevenueData;
   leadsAvaliacao: LeadAvaliacao[];
   configAvaliacao: ConfigAvaliacao;
+  configOrquestrador: ConfigOrquestrador;
+  relatoriosLisa: RelatorioLisa[];
 }
 
-// Inicializar e garantir que o banco existe
-export function initDb() {
-  if (!fs.existsSync(DB_DIR)) {
-    fs.mkdirSync(DB_DIR, { recursive: true });
-  }
+const APP_STATE_ROW_ID = 1;
 
-  if (!fs.existsSync(DB_FILE)) {
-    // Criar senhas iniciais usando bcryptjs
-    const salt = bcrypt.genSaltSync(10);
-    
-    const users: User[] = [
-      {
-        id: 'usr-hugo',
-        nome: 'Hugo Vilhena',
-        email: 'hugo.f.vilhena@gmail.com',
-        senhaHash: bcrypt.hashSync('Lobo@2026', salt),
-        cargo: 'ADMIN',
-        imobiliariaId: 'imob-001',
-        imobiliariaNome: 'LOBO IMOVEIS',
-      },
-      {
-        id: 'usr-comercial',
-        nome: 'Equipe Comercial',
-        email: 'atendimento@loboimoveis.imb.br',
-        senhaHash: bcrypt.hashSync('Lobo@2026', salt),
-        cargo: 'CORRETOR',
-        imobiliariaId: 'imob-001',
-        imobiliariaNome: 'LOBO IMOVEIS',
-      },
-      {
-        id: 'usr-marketing',
-        nome: 'Equipe Marketing',
-        email: 'marketing@loboimoveis.imb.br',
-        senhaHash: bcrypt.hashSync('Lobo@2026', salt),
-        cargo: 'MARKETING',
-        imobiliariaId: 'imob-001',
-        imobiliariaNome: 'LOBO IMOVEIS',
-      },
-    ];
-
-    const initialDb: DbSchema = {
-      users,
-      imoveis: mockImoveis,
-      portais: mockPortais,
-      destaques: mockDestaques,
-      revenue: mockRevenueData,
-      leadsAvaliacao: [],
-      configAvaliacao: CONFIG_AVALIACAO_PADRAO,
-    };
-
-    fs.writeFileSync(DB_FILE, JSON.stringify(initialDb, null, 2), 'utf-8');
-  }
+function buildSenhaPadrao(): string {
+  const salt = bcrypt.genSaltSync(10);
+  return bcrypt.hashSync('Lobo@2026', salt);
 }
 
-// Ler banco de dados
-export function readDb(): DbSchema {
-  initDb();
-  const raw = fs.readFileSync(DB_FILE, 'utf-8');
-  const data = JSON.parse(raw);
-  // Backfill pra bancos criados antes desses campos existirem.
+function buildInitialDb(): DbSchema {
+  const senhaHash = buildSenhaPadrao();
+  const users: User[] = [
+    {
+      id: 'usr-hugo',
+      nome: 'Hugo Vilhena',
+      email: 'hugo.f.vilhena@gmail.com',
+      senhaHash,
+      cargo: 'ADMIN',
+      imobiliariaId: 'imob-001',
+      imobiliariaNome: 'LOBO IMOVEIS',
+    },
+    {
+      id: 'usr-comercial',
+      nome: 'Equipe Comercial',
+      email: 'atendimento@loboimoveis.imb.br',
+      senhaHash,
+      cargo: 'CORRETOR',
+      imobiliariaId: 'imob-001',
+      imobiliariaNome: 'LOBO IMOVEIS',
+    },
+    {
+      id: 'usr-marketing',
+      nome: 'Equipe Marketing',
+      email: 'marketing@loboimoveis.imb.br',
+      senhaHash,
+      cargo: 'MARKETING',
+      imobiliariaId: 'imob-001',
+      imobiliariaNome: 'LOBO IMOVEIS',
+    },
+  ];
+
+  return {
+    users,
+    imoveis: mockImoveis,
+    portais: mockPortais,
+    destaques: mockDestaques,
+    revenue: mockRevenueData,
+    leadsAvaliacao: [],
+    configAvaliacao: CONFIG_AVALIACAO_PADRAO,
+    configOrquestrador: CONFIG_ORQUESTRADOR_PADRAO,
+    relatoriosLisa: [],
+  };
+}
+
+function aplicarBackfill(data: DbSchema): DbSchema {
+  // Backfill pra bancos criados antes desses campos existirem — mantém
+  // compatibilidade com o mesmo comportamento que o db.json tinha.
   if (!Array.isArray(data.leadsAvaliacao)) data.leadsAvaliacao = [];
   if (!data.configAvaliacao) data.configAvaliacao = CONFIG_AVALIACAO_PADRAO;
+  if (!data.configOrquestrador) data.configOrquestrador = CONFIG_ORQUESTRADOR_PADRAO;
+  if (!Array.isArray(data.configOrquestrador.documentos)) data.configOrquestrador.documentos = [];
+  if (!Array.isArray(data.relatoriosLisa)) data.relatoriosLisa = [];
   return data;
 }
 
-// Salvar no banco
-export function writeDb(data: DbSchema) {
-  if (!fs.existsSync(DB_DIR)) {
-    fs.mkdirSync(DB_DIR, { recursive: true });
+let schemaGarantido = false;
+
+async function garantirSchema(): Promise<void> {
+  if (schemaGarantido) return;
+  const db = getPool();
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS app_state (
+      id SMALLINT PRIMARY KEY,
+      data JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+  schemaGarantido = true;
+}
+
+// Inicializar e garantir que a linha de estado existe (equivalente ao antigo
+// initDb() que criava o arquivo db.json na primeira execução).
+export async function initDb(): Promise<void> {
+  await garantirSchema();
+  const db = getPool();
+  const existing = await db.query('SELECT 1 FROM app_state WHERE id = $1', [APP_STATE_ROW_ID]);
+  if (existing.rowCount === 0) {
+    const initialDb = buildInitialDb();
+    await db.query('INSERT INTO app_state (id, data) VALUES ($1, $2)', [
+      APP_STATE_ROW_ID,
+      JSON.stringify(initialDb),
+    ]);
   }
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+// Ler estado da aplicação
+export async function readDb(): Promise<DbSchema> {
+  await initDb();
+  const db = getPool();
+  const result = await db.query('SELECT data FROM app_state WHERE id = $1', [APP_STATE_ROW_ID]);
+  const data = result.rows[0]?.data as DbSchema;
+  return aplicarBackfill(data);
+}
+
+// Salvar estado da aplicação
+export async function writeDb(data: DbSchema): Promise<void> {
+  await garantirSchema();
+  const db = getPool();
+  await db.query(
+    `INSERT INTO app_state (id, data, updated_at) VALUES ($1, $2, now())
+     ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = now()`,
+    [APP_STATE_ROW_ID, JSON.stringify(data)]
+  );
 }

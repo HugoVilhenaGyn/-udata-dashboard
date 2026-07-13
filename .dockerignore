@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env*
+!.env.local.example
+npm-debug.log*
+*.tsbuildinfo
+Dockerfile
+docker-compose.yml
+.dockerignore
+README.md
+CLAUDE.md
+DEPLOY.md
+CHAMADO-VISTA-API.md

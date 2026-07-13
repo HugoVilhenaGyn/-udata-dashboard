@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifySessionToken } from './lib/auth-service';
-
-// Definição de permissões de rotas por cargo
-const ROLE_PERMISSIONS: Record<string, string[]> = {
-  ADMIN: ['/', '/copiloto', '/farol', '/inventario', '/qualidade', '/receita', '/destaques', '/xml', '/avaliacao-admin', '/configuracoes'],
-  MARKETING: ['/', '/copiloto', '/farol', '/inventario', '/qualidade', '/destaques', '/avaliacao-admin', '/configuracoes'],
-  CORRETOR: ['/', '/copiloto', '/farol', '/inventario', '/qualidade', '/configuracoes'],
-};
+import { ROLE_PERMISSIONS } from './lib/permissions';
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

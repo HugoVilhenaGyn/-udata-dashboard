@@ -34,6 +34,12 @@ export default function XmlPage() {
   const [imoveisTotal, setImoveisTotal] = useState(0);
   const [imoveisSucesso, setImoveisSucesso] = useState(0);
   const [imoveisErro, setImoveisErro] = useState(0);
+  // Qual canal está sendo carregado — só os dois que a imobiliária realmente
+  // assina: Grupo OLX (zap/olx/vivareal, um único feed VRSync) e Portal 62
+  // (feed próprio, formato portal62_native). Chaves na Mão e ImovelWeb não
+  // têm assinatura ativa, por isso não aparecem aqui.
+  const [portalOrigem, setPortalOrigem] = useState<'grupo_olx' | 'portal62' | null>(null);
+  const portalPendenteRef = useRef<'grupo_olx' | 'portal62' | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -43,22 +49,39 @@ export default function XmlPage() {
     );
   };
 
-  // Carregar arquivo local enviado pelo usuário
+  // Carregar arquivo local enviado pelo usuário. O botão que disparou o
+  // seletor de arquivo já deixou em portalPendenteRef qual canal é esse
+  // (Grupo OLX ou Portal 62), pra rotular a origem do feed corretamente.
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const origem = portalPendenteRef.current;
+    const rotuloOrigem = origem === 'portal62' ? 'Portal 62' : origem === 'grupo_olx' ? 'Grupo OLX (VRSync)' : null;
 
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
       setXmlOriginal(content);
       setXmlEnriquecido('');
-      setLogs([`📂 Arquivo "${file.name}" carregado com sucesso (${(content.length / 1024).toFixed(1)} KB).`]);
+      setPortalOrigem(origem);
+      setLogs([
+        rotuloOrigem
+          ? `📂 Arquivo "${file.name}" carregado (${rotuloOrigem}, ${(content.length / 1024).toFixed(1)} KB).`
+          : `📂 Arquivo "${file.name}" carregado com sucesso (${(content.length / 1024).toFixed(1)} KB).`,
+      ]);
       setAlteracoes([]);
       setNotaAntes(0);
       setNotaDepois(0);
     };
     reader.readAsText(file);
+    e.target.value = '';
+    portalPendenteRef.current = null;
+  };
+
+  const abrirSeletorArquivo = (portal: 'grupo_olx' | 'portal62') => {
+    portalPendenteRef.current = portal;
+    fileInputRef.current?.click();
   };
 
   // Conectar feed XML via URL — tenta buscar de verdade; se falhar (CORS,
@@ -84,6 +107,7 @@ export default function XmlPage() {
 
       setXmlOriginal(text);
       setXmlEnriquecido('');
+      setPortalOrigem(null);
       setLogs(prev => [
         ...prev,
         '📡 Conectado com sucesso!',
@@ -461,7 +485,7 @@ export default function XmlPage() {
 
             <div className={styles.dividerOr}>ou</div>
 
-            <div className={styles.uploadBox}>
+            <div className={styles.uploadBox} style={{ width: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
               <input
                 type="file"
                 accept=".xml"
@@ -471,13 +495,23 @@ export default function XmlPage() {
               />
               <button
                 className="btn btn-secondary"
-                style={{ gap: 6, width: '100%', justifyContent: 'center' }}
-                onClick={() => fileInputRef.current?.click()}
+                style={{ gap: 6, width: 260, justifyContent: 'center' }}
+                onClick={() => abrirSeletorArquivo('grupo_olx')}
               >
-                <Upload size={14} /> Carregar Arquivo XML Local (.xml)
+                <Upload size={14} /> XML Grupo OLX (zap/olx/vivareal)
+              </button>
+              <button
+                className="btn btn-secondary"
+                style={{ gap: 6, width: 260, justifyContent: 'center' }}
+                onClick={() => abrirSeletorArquivo('portal62')}
+              >
+                <Upload size={14} /> XML Portal 62
               </button>
             </div>
           </div>
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.75rem' }}>
+            Só os canais com assinatura ativa: Grupo OLX (feed único VRSync para ZAP, OLX e VivaReal) e Portal 62 (feed próprio). Chaves na Mão e ImovelWeb não têm assinatura hoje.
+          </p>
         </div>
 
         {/* METRICS & CONFIG */}
@@ -575,7 +609,14 @@ export default function XmlPage() {
           {/* Left: Input original */}
           <div className="card">
             <div className={styles.editorHeader}>
-              <span className={styles.editorLabel}>Entrada XML (Cole ou Edite aqui)</span>
+              <span className={styles.editorLabel}>
+                Entrada XML (Cole ou Edite aqui)
+                {portalOrigem && (
+                  <span style={{ marginLeft: 8, fontSize: '0.68rem', fontWeight: 700, color: 'var(--primary-hover)' }}>
+                    · {portalOrigem === 'portal62' ? 'Portal 62' : 'Grupo OLX (VRSync)'}
+                  </span>
+                )}
+              </span>
               <span className={styles.fileSize}>
                 {((xmlOriginal.length) / 1024).toFixed(1)} KB
               </span>
@@ -586,6 +627,7 @@ export default function XmlPage() {
               onChange={(e) => {
                 setXmlOriginal(e.target.value);
                 setXmlEnriquecido('');
+                setPortalOrigem(null);
               }}
               spellCheck="false"
             />

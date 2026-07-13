@@ -1,0 +1,53 @@
+# =============================================================
+# Deploy no VPS: app Next.js (container próprio) + Nginx (reverse proxy
+# com SSL via Certbot). O Postgres NÃO roda aqui — é o Supabase (gerenciado
+# na nuvem), configurado via DATABASE_URL no .env do servidor.
+#
+# Uso (no VPS, depois de configurar .env — ver DEPLOY.md):
+#   docker compose up -d --build
+# =============================================================
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    networks:
+      - broker-net
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - certbot-www:/var/www/certbot:ro
+      - certbot-certs:/etc/letsencrypt:ro
+    depends_on:
+      - app
+    networks:
+      - broker-net
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-www:/var/www/certbot
+      - certbot-certs:/etc/letsencrypt
+    # Renova o certificado a cada 12h (só renova de verdade quando estiver
+    # perto de vencer — comando idempotente, seguro rodar sempre).
+    entrypoint: >
+      sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done"
+
+networks:
+  broker-net:
+
+volumes:
+  certbot-www:
+  certbot-certs:

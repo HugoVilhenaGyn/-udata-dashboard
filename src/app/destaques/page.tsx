@@ -11,7 +11,7 @@ import styles from './page.module.css';
 
 const portalColors: Record<string, string> = {
   olx: '#6a1faf', zap: '#ff5a00', vivareal: '#0066cc',
-  chaves: '#e11d48', imovelweb: '#059669', meta: '#1877f2', google: '#ea4335',
+  portal62: '#e11d48', imovelweb: '#059669', meta: '#1877f2', google: '#ea4335',
 };
 
 function PortalCard({ portal, onAdicionar }: { portal: Portal; onAdicionar: (portal: Portal) => void }) {

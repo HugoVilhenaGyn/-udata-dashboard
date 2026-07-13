@@ -9,7 +9,7 @@ import { verifySessionToken } from '@/lib/auth-service';
 // e ajusta).
 
 export async function GET() {
-  const db = readDb();
+  const db = await readDb();
   return NextResponse.json({ success: true, data: db.configAvaliacao || CONFIG_AVALIACAO_PADRAO });
 }
 
@@ -24,7 +24,7 @@ export async function PUT(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const db = readDb();
+    const db = await readDb();
     db.configAvaliacao = {
       ativo: typeof body.ativo === 'boolean' ? body.ativo : db.configAvaliacao.ativo,
       telefoneContato: body.telefoneContato ?? db.configAvaliacao.telefoneContato,
@@ -32,7 +32,7 @@ export async function PUT(req: NextRequest) {
       mensagemHero: body.mensagemHero ?? db.configAvaliacao.mensagemHero,
       mensagemIndisponivel: body.mensagemIndisponivel ?? db.configAvaliacao.mensagemIndisponivel,
     };
-    writeDb(db);
+    await writeDb(db);
     return NextResponse.json({ success: true, data: db.configAvaliacao });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

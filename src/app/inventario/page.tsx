@@ -16,7 +16,7 @@ type SortDir = 'asc' | 'desc';
 
 const portalColors: Record<string, string> = {
   olx: '#6a1faf', zap: '#ff5a00', vivareal: '#0066cc',
-  chaves: '#e11d48', imovelweb: '#059669', meta: '#1877f2',
+  portal62: '#e11d48', imovelweb: '#059669', meta: '#1877f2',
 };
 
 export default function InventarioPage() {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -14,12 +15,15 @@ import {
   ChevronRight,
   Brain,
   Calculator,
+  ClipboardList,
 } from 'lucide-react';
+import { ROLE_PERMISSIONS } from '@/lib/permissions';
 import styles from './Sidebar.module.css';
 
 const navItems = [
   { href: '/', label: 'Visão Geral', icon: LayoutDashboard },
   { href: '/copiloto', label: 'Orquestrador IA', icon: Brain },
+  { href: '/relatorios', label: 'Relatórios', icon: ClipboardList },
   { href: '/farol', label: 'Farol de Oportunidade', icon: Lightbulb },
   { href: '/inventario', label: 'Inventário', icon: Building2 },
   { href: '/qualidade', label: 'Qualidade de Anúncios', icon: Star },
@@ -31,6 +35,24 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [cargo, setCargo] = useState<string | null>(null);
+
+  // Busca só o cargo do usuário logado, pra esconder itens de menu que ele
+  // não acessa (evita link que dá em "acesso negado"). O bloqueio de
+  // verdade continua no middleware — isso aqui é só apresentação.
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => setCargo(data?.data?.cargo || null))
+      .catch(() => setCargo(null));
+  }, []);
+
+  const permitidos = cargo ? ROLE_PERMISSIONS[cargo] || [] : null;
+  const itensVisiveis = permitidos ? navItems.filter(item => permitidos.includes(item.href)) : navItems;
+
+  const principal = itensVisiveis.filter(i => i.href === '/');
+  const analise = itensVisiveis.filter(i => ['/copiloto', '/relatorios', '/farol', '/inventario'].includes(i.href));
+  const operacoes = itensVisiveis.filter(i => !principal.includes(i) && !analise.includes(i));
 
   return (
     <aside className={styles.sidebar}>
@@ -51,31 +73,37 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className={styles.nav}>
-        <div className={styles.navSection}>
-          <span className={styles.navSectionLabel}>Principal</span>
-          {navItems.slice(0, 1).map(({ href, label, icon: Icon }) => (
-            <NavItem key={href} href={href} label={label} icon={Icon} active={pathname === href} />
-          ))}
-        </div>
+        {principal.length > 0 && (
+          <div className={styles.navSection}>
+            <span className={styles.navSectionLabel}>Principal</span>
+            {principal.map(({ href, label, icon: Icon }) => (
+              <NavItem key={href} href={href} label={label} icon={Icon} active={pathname === href} />
+            ))}
+          </div>
+        )}
 
-        <div className={styles.navSection}>
-          <span className={styles.navSectionLabel}>Análise</span>
-          {navItems.slice(1, 4).map(({ href, label, icon: Icon }) => (
-            <NavItem key={href} href={href} label={label} icon={Icon} active={pathname === href} />
-          ))}
-        </div>
+        {analise.length > 0 && (
+          <div className={styles.navSection}>
+            <span className={styles.navSectionLabel}>Análise</span>
+            {analise.map(({ href, label, icon: Icon }) => (
+              <NavItem key={href} href={href} label={label} icon={Icon} active={pathname === href} />
+            ))}
+          </div>
+        )}
 
-        <div className={styles.navSection}>
-          <span className={styles.navSectionLabel}>Operações</span>
-          {navItems.slice(4).map(({ href, label, icon: Icon }) => (
-            <NavItem key={href} href={href} label={label} icon={Icon} active={pathname === href} />
-          ))}
-        </div>
+        {operacoes.length > 0 && (
+          <div className={styles.navSection}>
+            <span className={styles.navSectionLabel}>Operações</span>
+            {operacoes.map(({ href, label, icon: Icon }) => (
+              <NavItem key={href} href={href} label={label} icon={Icon} active={pathname === href} />
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* Footer */}
       <div className={styles.sidebarFooter}>
-        <Link href="/configuracoes" className={styles.settingsLink}>
+        <Link href="/configuracoes/geral" className={styles.settingsLink}>
           <Settings size={16} />
           <span>Configurações</span>
         </Link>

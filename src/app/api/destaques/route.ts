@@ -12,7 +12,7 @@ import { Destaque } from '@/lib/types';
 
 export async function GET() {
   try {
-    const db = readDb();
+    const db = await readDb();
     return NextResponse.json({ success: true, data: db.destaques });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
@@ -61,9 +61,9 @@ export async function POST(req: NextRequest) {
       criado_em: new Date().toISOString(),
     };
 
-    const db = readDb();
+    const db = await readDb();
     db.destaques = [novo, ...db.destaques];
-    writeDb(db);
+    await writeDb(db);
 
     return NextResponse.json({ success: true, data: novo });
   } catch (error: any) {

@@ -25,9 +25,9 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readDbPg, writeDbPg, fecharPool } from './lib/pg-db.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, '..', 'src', 'data', 'db.json');
 const FEED_URL = 'https://loboimov-portais.vistahost.com.br/47366e944b4a56df1713df75fda662da';
 const LOG_PATH = path.join(__dirname, '..', 'src', 'data', 'sync-vista-log.json');
 
@@ -142,7 +142,7 @@ async function main() {
   const feedImoveis = parseImoveisXML(xmlText);
   console.log(`Feed real do Zap: ${feedImoveis.length} imóveis (só os marcados "Publicar Zap" no Vista).`);
 
-  const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
+  const db = await readDbPg();
   const porIdExterno = new Map(db.imoveis.map(im => [im.id_externo, im]));
 
   const agora = new Date().toISOString();
@@ -186,7 +186,7 @@ async function main() {
     }
   }
 
-  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
+  await writeDbPg(db);
 
   const relatorio = {
     executado_em: agora,
@@ -203,6 +203,7 @@ async function main() {
   if (naoEncontrados.length) console.log(`${naoEncontrados.length} códigos do feed não encontrados na base local:`, naoEncontrados.join(', '));
   for (const a of alterados) console.log(`  ${a.id_externo} — ${a.mudancas.join('; ')}`);
   console.log('\nRelatório salvo em', LOG_PATH);
+  await fecharPool();
 }
 
 main().catch(err => {

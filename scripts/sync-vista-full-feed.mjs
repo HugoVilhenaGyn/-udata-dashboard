@@ -21,9 +21,9 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readDbPg, writeDbPg, fecharPool } from './lib/pg-db.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, '..', 'src', 'data', 'db.json');
 const LOG_PATH = path.join(__dirname, '..', 'src', 'data', 'sync-vista-log.json');
 const FEED_URL = 'https://loboimov-portais.vistahost.com.br/155d5d5c328f52df1fb907cb8e43515c';
 
@@ -125,7 +125,7 @@ async function main() {
   const feedImoveis = parseListings(xmlText);
   console.log(`Feed completo (Loft/VRSync): ${feedImoveis.length} imóveis publicados ("Exibir no site").`);
 
-  const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
+  const db = await readDbPg();
   const porIdExterno = new Map(db.imoveis.map(im => [im.id_externo, im]));
 
   const agora = new Date().toISOString();
@@ -174,7 +174,7 @@ async function main() {
     }
   }
 
-  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf-8');
+  await writeDbPg(db);
 
   const relatorio = {
     executado_em: agora,
@@ -194,6 +194,7 @@ async function main() {
   for (const a of alterados.slice(0, 30)) console.log(`  ${a.id_externo} — ${a.mudancas.join('; ')}`);
   if (alterados.length > 30) console.log(`  ... e mais ${alterados.length - 30}`);
   console.log('\nRelatório completo salvo em', LOG_PATH);
+  await fecharPool();
 }
 
 main().catch(err => {

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const db = readDb();
+    const db = await readDb();
     const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
     if (!user) {

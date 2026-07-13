@@ -4,11 +4,20 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recha
 import { DashboardKPIs } from '@/lib/types';
 
 interface FarolPieChartProps {
-  kpis: DashboardKPIs;
+  // Modo antigo (compatível): passa o kpis inteiro, sempre lê os campos de
+  // VENDA (imoveis_venda_iminente etc). Continua funcionando sem mudanças.
+  kpis?: DashboardKPIs;
+  // Modo novo: valores explícitos — usado para renderizar o Farol de
+  // Locação (que não tem campos próprios em DashboardKPIs) com o mesmo
+  // componente, sem misturar contagem de venda com a de aluguel.
+  iminente?: number;
+  potencial?: number;
+  baixo?: number;
+  labels?: [string, string, string];
 }
 
 const COLORS = ['#22c55e', '#f59e0b', '#ef4444'];
-const LABELS = ['Venda Iminente', 'Venda Potencial', 'Baixo Potencial'];
+const LABELS_VENDA: [string, string, string] = ['Venda Iminente', 'Venda Potencial', 'Baixo Potencial'];
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
@@ -30,12 +39,16 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-export default function FarolPieChart({ kpis }: FarolPieChartProps) {
-  const total = kpis.total_imoveis;
+export default function FarolPieChart({ kpis, iminente, potencial, baixo, labels }: FarolPieChartProps) {
+  const valIminente = kpis ? kpis.imoveis_venda_iminente : (iminente ?? 0);
+  const valPotencial = kpis ? kpis.imoveis_venda_potencial : (potencial ?? 0);
+  const valBaixo = kpis ? kpis.imoveis_baixo_potencial : (baixo ?? 0);
+  const total = valIminente + valPotencial + valBaixo;
+  const lbls = labels || LABELS_VENDA;
   const data = [
-    { name: LABELS[0], value: kpis.imoveis_venda_iminente, color: COLORS[0], total },
-    { name: LABELS[1], value: kpis.imoveis_venda_potencial, color: COLORS[1], total },
-    { name: LABELS[2], value: kpis.imoveis_baixo_potencial, color: COLORS[2], total },
+    { name: lbls[0], value: valIminente, color: COLORS[0], total },
+    { name: lbls[1], value: valPotencial, color: COLORS[1], total },
+    { name: lbls[2], value: valBaixo, color: COLORS[2], total },
   ];
 
   return (

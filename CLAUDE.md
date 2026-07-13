@@ -12,19 +12,46 @@ Pasta local: `C:\Anti-Gravity\NivusClone\udata-dashboard`
 Todo dado "real" no app vem de fontes reais verificadas (CRM Vista/Loft,
 Canal Pro do Grupo ZAP/OLX) — nunca inventar números. Sempre que possível,
 provar a origem do dado antes de exibi-lo. Hugo testa tudo pessoalmente e
-reage mal a dado fabricado ou identidade fictícia (ex: login demo fake já
-foi removido e substituído pela identidade real dele).
+reage mal a dado fabricado ou identidade fictícia.
 
 ## Arquitetura
 
 - **Auth**: JWT via `jose` (`src/lib/auth-service.ts`), cookie `udata_session`,
-  bcryptjs. 3 contas reais em `src/data/db.json`: Hugo Vilhena (ADMIN),
-  Equipe Comercial (CORRETOR), Equipe Marketing (MARKETING).
-- **"Banco de dados"**: arquivo `src/data/db.json` (schema em `src/lib/db.ts`,
-  função `readDb()`/`writeDb()`). Tem 340 imóveis reais extraídos do CRM Vista.
-- **Middleware** (`src/middleware.ts`): controle de rota por cargo. `/api/*`
-  é sempre bypassado (bug crítico já corrigido). `/avaliacao*` é rota pública.
-- **Tipos**: `src/lib/types.ts` — `Imovel`, `Destaque`, `Portal`, etc.
+  bcryptjs. 3 contas reais: Hugo Vilhena (ADMIN), Equipe Comercial
+  (CORRETOR), Equipe Marketing (MARKETING).
+- **Banco de dados**: **Postgres (Supabase)**, acessado via `src/lib/db.ts`
+  (`readDb()`/`writeDb()`, ambos assíncronos). Todo o estado da aplicação
+  vive numa única linha JSONB (tabela `app_state`) — decisão deliberada pra
+  não ter que normalizar 15+ entidades em tabelas relacionais numa migração
+  só, mantendo a mesma forma de uso que as rotas de API já tinham quando o
+  "banco" era um arquivo `db.json`. `scripts/lib/pg-db.mjs` espelha o mesmo
+  acesso pra scripts Node fora do Next.js (sync do Vista, migração).
+  Tem 340 imóveis reais extraídos do CRM Vista como estado inicial (importado
+  via `npm run db:migrate`, que lê o `src/data/db.json` legado uma única vez).
+- **Middleware** (`src/middleware.ts`) + **`src/lib/permissions.ts`**:
+  controle de rota por cargo — fonte única de verdade (`ROLE_PERMISSIONS`)
+  compartilhada entre o middleware (bloqueio real de navegação) e o Sidebar
+  (esconder itens de menu que o cargo não acessa). `/api/*` é sempre
+  bypassado no middleware (cada rota de API cuida da própria autenticação).
+  `/avaliacao*` é pública (landing de avaliação online pro visitante do site).
+- **Tipos**: `src/lib/types.ts` — `Imovel`, `Destaque`, `Portal`, `PortalSlug`, etc.
+- **Deploy**: VPS da Hostinger (PM2 + Nginx + Certbot, sem Docker — Hugo já
+  tem o VPS contratado), Postgres no Supabase. Ver `DEPLOY.md` pro passo a
+  passo completo. Repo também tem Dockerfile/docker-compose prontos caso
+  decida usar Docker no futuro, mas não são o caminho principal.
+
+## Portais reais contratados (não simular outros)
+
+Só dois canais têm assinatura ativa hoje:
+- **Grupo OLX** — um único feed VRSync que cobre ZAP, OLX e VivaReal
+  (`portais_publicados` com os slugs `zap`, `olx`, `vivareal`).
+- **Portal 62** (portal local de Goiânia) — slug `portal62`, feed próprio.
+
+Chaves na Mão, ImovelWeb, Meta Ads e Google Ads **não têm assinatura ativa**
+— existem como registros inativos (`ativo: false`, orçamento zerado) só pra
+não quebrar telas que referenciam esses slugs, mas não contam em nenhum KPI
+de "portais ativos". Antes de adicionar qualquer portal novo aos KPIs/telas,
+confirmar com o Hugo se é assinatura real.
 
 ## Integrações reais confirmadas (não simuladas)
 
@@ -38,44 +65,76 @@ foi removido e substituído pela identidade real dele).
   catálogo completo ~327 imóveis; feed "Zap" é só o subconjunto marcado
   "Publicar Zap", ~40 imóveis).
 - **Webhook de leads**: Canal Pro → Configurações → Integrações → Leads já
-  tem um webhook ativo entregando leads em tempo real dentro do Vista
-  (confirmado via log "Últimos leads enviados" e via leads reais aparecendo
-  no Kanban de Negócios do Vista).
+  tem um webhook ativo entregando leads em tempo real dentro do Vista.
 - **Sincronização automática**: `scripts/sync-vista-full-feed.mjs` (catálogo
   completo) e `scripts/sync-vista-zap-feed.mjs` (só o publicado no Zap)
-  atualizam `db.json` direto do feed XML real do Vista. Rodar com
-  `npm run sync:vista`. Precisa rodar na máquina do Hugo (tem internet real);
-  não funciona em ambientes com proxy restrito. Gera relatório em
-  `src/data/sync-vista-log.json`.
+  atualizam o Postgres direto do feed XML real do Vista. Rodar com
+  `npm run sync:vista`. Depois do deploy no VPS, agendar via cron (ver
+  `DEPLOY.md`) — não depende mais de rodar na máquina do Hugo.
+- **Chamado aberto com o Vista** sobre acesso à API REST — ver
+  `CHAMADO-VISTA-API.md`.
+
+## Lisa (Orquestrador IA) — `/copiloto`
+
+Agente real com **function calling nativo do Gemini** (`gemini-3.5-flash`),
+não é mais chat com regras de palavra-chave. Endpoint: `src/app/api/copiloto/route.ts`.
+
+- **Ferramentas disponíveis**: `pontuar_imovel`, `gerar_relatorio` (salva em
+  `relatoriosLisa`, navegável em `/relatorios`), `navegar`,
+  `propor_criar_destaque`, `propor_atualizar_status_lead`.
+- **Segurança por design (decisão explícita do Hugo)**: ferramentas de
+  leitura/análise executam sozinhas; qualquer ação que grava dado real
+  (`propor_criar_destaque`, `propor_atualizar_status_lead`) **nunca** escreve
+  direto — só devolve uma proposta que aparece na tela como card de
+  confirmação. Só um clique do usuário aciona o endpoint real de escrita
+  (`/api/destaques` POST, `/api/leads-avaliacao` PATCH).
+- **Contexto**: `montarContexto()` manda pro modelo listas completas (não
+  amostras de 5 itens) — a Lisa deve responder com dados reais, nunca
+  redirecionar genericamente pra outra tela quando a resposta já está
+  disponível ali.
+- **Treinamento** (`/configuracoes/lisa`, só ADMIN): instruções de texto
+  livre + upload de documentos RAG (texto ou PDF via `pdf-parse`) — pesquisas
+  de mercado externas (ex: Anuário DataZap, Guia 62imóveis) que a Lisa cruza
+  com o portfólio real ao montar um estudo de mercado.
+- **Códigos de imóvel**: sempre exibir via `codigoImovel()` (remove prefixo
+  "LOFT-" do `id_externo`) — nunca o `id_externo` cru.
+
+## Configurações (`/configuracoes`)
+
+Hub com abas: **Geral** (todos os cargos) e **Lisa** (só ADMIN — treinamento
+é configuração sensível, não operacional). Rota antiga
+`/orquestrador-treinamento` faz redirect pra `/configuracoes/lisa`.
 
 ## Features principais
 
 - **Farol de Oportunidade, Inventário, Qualidade de Anúncios, Destaques,
-  Motor de XML, Dashboard de Receita**: núcleo original, todos com dados
-  reais dos 340 imóveis (não mock).
+  Motor de XML, Dashboard de Receita, Visão Geral**: dados reais dos 340
+  imóveis. Visão Geral mostra Farol de Venda e Locação lado a lado, mais
+  Destaques Ativos real (XML premium + criados no painel, deduplicados).
+- **Motor de XML**: upload separado por canal — "Grupo OLX" e "Portal 62"
+  (só os dois com assinatura ativa).
 - **Avaliação Online** (`/avaliacao` pública + `/avaliacao-admin` protegida):
-  calculadora de avaliação de venda/locação baseada em comparáveis reais do
-  portfólio (`avaliarImovel()` em `mock-data.ts`). Captura de lead é
-  obrigatória ANTES de mostrar o resultado (decisão explícita do Hugo).
-  Admin gerencia leads recebidos e configura textos/ativação da landing.
-- **Orquestrador IA** (`/copiloto`): chat com regras de palavra-chave, não é
-  um agente real ainda. Botões de "Ação Recomendada" são cosméticos (não
-  persistem mudança real) — sinalizado ao Hugo, não corrigido ainda.
+  calculadora baseada em comparáveis reais do portfólio. Captura de lead
+  obrigatória antes de mostrar o resultado.
+- **Relatórios** (`/relatorios`): relatórios estruturados gerados pela Lisa,
+  persistentes e navegáveis (não somem quando a conversa do chat rola).
 
 ## Pendências conhecidas (não resolvidas ainda)
 
-- Botões cosméticos do Orquestrador IA (não persistem).
-- Estatística fixa "+47 este mês" de Erros XML Corrigidos no Copiloto.
 - Validação real de XSD (`xml.vivareal.com/vrsync.xsd`) no Motor de XML —
-  Hugo pediu para adiar ("não, agora não").
-- Task Scheduler do Windows para rodar `npm run sync:vista` automaticamente
-  ainda não foi configurado (passo a passo já foi passado ao Hugo).
+  Hugo pediu para adiar.
+- Task Scheduler / cron pra rodar `npm run sync:vista` automaticamente ainda
+  não configurado no VPS de produção (só documentado em `DEPLOY.md`).
+- Deploy em produção (VPS + Supabase) ainda não executado de fato — código e
+  documentação prontos, falta o Hugo provisionar o Supabase e o VPS e rodar
+  o passo a passo de `DEPLOY.md`.
 
 ## Cuidado com dados sensíveis
 
-Os links de feed XML do Vista (`scripts/sync-vista-*.mjs`) e qualquer
-webhook do Canal Pro contêm tokens — tratar como senha, nunca expor fora
-do projeto do Hugo.
+Os links de feed XML do Vista (`scripts/sync-vista-*.mjs`), a `DATABASE_URL`
+do Postgres e qualquer webhook do Canal Pro contêm credenciais — tratar como
+senha, nunca commitar (tudo isso fica em `.env`/`.env.local`, já no
+`.gitignore`).
 
 ## Como continuar
 

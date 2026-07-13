@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import KpiCard from '@/components/ui/KpiCard';
 import FarolPieChart from '@/components/charts/FarolPieChart';
@@ -10,7 +10,7 @@ import QualityBar from '@/components/ui/QualityBar';
 import {
   mockKPIs, mockImoveis, mockRevenueData, mockCargasXML,
   mockImobiliaria, mockLeadsMensal, receitaResumo, formatCurrency, formatNumber,
-  canalProSnapshot,
+  canalProSnapshot, mockDestaques,
 } from '@/lib/mock-data';
 import {
   Building2, TrendingUp, Star, FileCode2, Zap, AlertCircle, CheckCircle2, Clock, KeyRound, Handshake, Eye, Users,
@@ -34,6 +34,38 @@ export default function HomePage() {
   const imoveisAlerta = [...mockImoveis]
     .filter(i => i.nota_qualidade < 5)
     .slice(0, 5);
+
+  // Farol de Locação — mesma lógica do Farol de Venda, mas filtrando só
+  // imóveis de aluguel (mockKPIs só tem os campos de venda). Sem isso, quem
+  // administra locação (que também é operação real da imobiliária) não
+  // tinha visibilidade nenhuma na Visão Geral, só na página /farol.
+  const imoveisLocacao = mockImoveis.filter(i => i.finalidade === 'aluguel');
+  const locacaoIminente = imoveisLocacao.filter(i => i.status_farol === 'venda_iminente').length;
+  const locacaoPotencial = imoveisLocacao.filter(i => i.status_farol === 'venda_potencial').length;
+  const locacaoBaixo = imoveisLocacao.filter(i => i.status_farol === 'baixo_potencial').length;
+
+  // Destaques Ativos real — antes esse card mostrava só o mockKPIs estático
+  // (imóveis com PublicationType PREMIUM vindo do XML, hoje só 1 dos 340),
+  // e ignorava por completo os destaques criados pelo usuário na tela de
+  // Gestão de Destaques ou confirmados pela Lisa (que gravam em
+  // db.destaques via /api/destaques). Buscamos os dois conjuntos e
+  // deduplicamos por imóvel, pra não contar duas vezes o mesmo imóvel que
+  // já é PREMIUM no XML e também foi destacado manualmente no painel.
+  const [destaquesAtivosApi, setDestaquesAtivosApi] = useState<{ imovel_id: string; status: string }[] | null>(null);
+  useEffect(() => {
+    fetch('/api/destaques')
+      .then(res => (res.ok ? res.json() : null))
+      .then(json => setDestaquesAtivosApi(json?.success ? json.data : []))
+      .catch(() => setDestaquesAtivosApi([]));
+  }, []);
+
+  const destaquesAtivosCount = useMemo(() => {
+    const idsPremiumXml = new Set(mockDestaques.map(d => d.imovel_id));
+    const idsAppCriados = new Set(
+      (destaquesAtivosApi || []).filter(d => d.status === 'ativo').map(d => d.imovel_id)
+    );
+    return new Set([...idsPremiumXml, ...idsAppCriados]).size;
+  }, [destaquesAtivosApi]);
 
   return (
     <>
@@ -96,7 +128,7 @@ export default function HomePage() {
           />
           <KpiCard
             title="Destaques Ativos"
-            value={formatNumber(mockKPIs.imoveis_com_destaque)}
+            value={destaquesAtivosApi === null ? '—' : formatNumber(destaquesAtivosCount)}
             icon={Zap}
             iconColor="#fb923c"
             subtitle={`${mockKPIs.portais_ativos} portais ativos`}
@@ -108,6 +140,13 @@ export default function HomePage() {
             icon={TrendingUp}
             iconColor="#22c55e"
             subtitle={`${((mockKPIs.imoveis_venda_iminente / mockKPIs.total_imoveis) * 100).toFixed(0)}% do portfólio`}
+          />
+          <KpiCard
+            title="Locação Iminente"
+            value={formatNumber(locacaoIminente)}
+            icon={KeyRound}
+            iconColor="#22c55e"
+            subtitle={`${imoveisLocacao.length > 0 ? ((locacaoIminente / imoveisLocacao.length) * 100).toFixed(0) : 0}% dos imóveis para alugar`}
           />
         </div>
 
@@ -164,6 +203,38 @@ export default function HomePage() {
                 <span className={styles.farolDot} style={{ background: '#ef4444' }} />
                 <span className={styles.farolLabel}>Baixo Potencial</span>
                 <span className={styles.farolValue}>{mockKPIs.imoveis_baixo_potencial}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>Farol de Oportunidade (Locação)</h2>
+              <span className={styles.badge}>
+                {imoveisLocacao.length} imóveis para alugar
+              </span>
+            </div>
+            <FarolPieChart
+              iminente={locacaoIminente}
+              potencial={locacaoPotencial}
+              baixo={locacaoBaixo}
+              labels={['Locação Iminente', 'Locação Potencial', 'Baixo Potencial']}
+            />
+            <div className={styles.farolStats}>
+              <div className={styles.farolStat}>
+                <span className={styles.farolDot} style={{ background: '#22c55e' }} />
+                <span className={styles.farolLabel}>Locação Iminente</span>
+                <span className={styles.farolValue}>{locacaoIminente}</span>
+              </div>
+              <div className={styles.farolStat}>
+                <span className={styles.farolDot} style={{ background: '#f59e0b' }} />
+                <span className={styles.farolLabel}>Locação Potencial</span>
+                <span className={styles.farolValue}>{locacaoPotencial}</span>
+              </div>
+              <div className={styles.farolStat}>
+                <span className={styles.farolDot} style={{ background: '#ef4444' }} />
+                <span className={styles.farolLabel}>Baixo Potencial</span>
+                <span className={styles.farolValue}>{locacaoBaixo}</span>
               </div>
             </div>
           </div>

@@ -16,7 +16,7 @@ export async function GET() {
     return NextResponse.json({ success: false, message: 'Não autenticado.' }, { status: 401 });
   }
 
-  const db = readDb();
+  const db = await readDb();
   return NextResponse.json({ success: true, data: db.leadsAvaliacao });
 }
 
@@ -50,9 +50,9 @@ export async function POST(req: NextRequest) {
       status: 'novo',
     };
 
-    const db = readDb();
+    const db = await readDb();
     db.leadsAvaliacao = [novo, ...db.leadsAvaliacao];
-    writeDb(db);
+    await writeDb(db);
 
     return NextResponse.json({ success: true, data: novo });
   } catch (error: any) {
@@ -78,14 +78,14 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'id e status válido são obrigatórios.' }, { status: 400 });
     }
 
-    const db = readDb();
+    const db = await readDb();
     const idx = db.leadsAvaliacao.findIndex(l => l.id === id);
     if (idx === -1) {
       return NextResponse.json({ success: false, message: 'Lead não encontrado.' }, { status: 404 });
     }
 
     db.leadsAvaliacao[idx] = { ...db.leadsAvaliacao[idx], status };
-    writeDb(db);
+    await writeDb(db);
 
     return NextResponse.json({ success: true, data: db.leadsAvaliacao[idx] });
   } catch (error: any) {

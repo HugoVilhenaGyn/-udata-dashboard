@@ -1,29 +1,68 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
-import { mockImoveis, mockPortais, mockRegrasEnriquecimento, formatCurrency } from '@/lib/mock-data';
-import { Imovel } from '@/lib/types';
+import { mockImoveis, mockPortais, formatCurrency } from '@/lib/mock-data';
 import {
-  Send, Bot, User, Cpu, Sparkles, Building2, Lightbulb, Star, AlertTriangle, ArrowRight, CheckCircle2,
+  Send, Bot, User, Cpu, Sparkles, ArrowRight, AlertCircle, FileText,
+  CheckCircle2, XCircle, Loader2, Zap,
 } from 'lucide-react';
 import styles from './page.module.css';
+
+interface RelatorioSecao {
+  titulo: string;
+  texto?: string;
+  colunas?: string[];
+  linhas?: string[][];
+}
+
+interface RelatorioLisa {
+  id: string;
+  titulo: string;
+  tipo: string;
+  resumo: string;
+  secoes: RelatorioSecao[];
+}
+
+interface PropostaCriarDestaque {
+  tipo: 'criar_destaque';
+  payload: {
+    imovel: { id: string; titulo: string; bairro: string; preco_atual: number; tipo: string; status_farol: string; nota_qualidade: number; finalidade: string };
+    codigo: string;
+    portal: string;
+    tipo_destaque: string;
+    justificativa: string;
+  };
+}
+
+interface PropostaAtualizarLead {
+  tipo: 'atualizar_status_lead';
+  payload: { lead_id: string; lead_nome: string; status_atual: string; novo_status: string; justificativa: string };
+}
+
+type PropostaAcao = PropostaCriarDestaque | PropostaAtualizarLead;
+
+type PropostaStatus = 'pendente' | 'confirmando' | 'confirmado' | 'descartado' | 'erro';
 
 interface Message {
   id: string;
   sender: 'user' | 'ai';
   text: string;
   timestamp: string;
-  suggestedAction?: {
-    label: string;
-    actionType: 'adjust_prices' | 'enrich_xml' | 'optimize_highlights';
-    details?: string;
-  };
-  tableData?: {
-    headers: string[];
-    rows: any[][];
-  };
+  rotaSugerida?: string | null;
+  rotaLabel?: string | null;
+  erro?: boolean;
+  relatorio?: RelatorioLisa | null;
+  propostaAcao?: PropostaAcao | null;
+  propostaStatus?: PropostaStatus;
 }
+
+const STATUS_LEAD_LABEL: Record<string, string> = {
+  novo: 'Novo',
+  em_atendimento: 'Em atendimento',
+  atendido: 'Atendido',
+};
 
 // CPL médio real: total gasto em orçamento dos portais ativos / total de
 // leads que esses portais geraram no mês. Substitui o valor fixo que
@@ -34,11 +73,12 @@ const leadsTotal = portaisAtivos.reduce((acc, p) => acc + p.leads_mes, 0);
 const cplMedio = leadsTotal > 0 ? gastoTotal / leadsTotal : 0;
 
 export default function CopilotoPage() {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       sender: 'ai',
-      text: `Olá! Sou a Inteligência de Orquestração da BrokerImobAI. Analisei todo o seu inventário de imóveis (${mockImoveis.length} anúncios), os canais de feeds XML e as regras de precificação. \n\nComo posso ajudar você a otimizar a performance comercial do seu portfólio hoje?`,
+      text: `Oi! Sou a Lisa, o Orquestrador IA da BrokerImobAI. Tenho acesso em tempo real ao seu portfólio (${mockImoveis.length} imóveis), qualidade de anúncios, farol de oportunidade, destaques e leads da avaliação online.\n\nPergunta o que quiser — posso te levar direto pra seção certa do painel também.`,
       timestamp: new Date().toLocaleTimeString().slice(0, 5),
     },
   ]);
@@ -51,163 +91,110 @@ export default function CopilotoPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const processQuery = (query: string) => {
+  const processQuery = async (query: string, historicoAtual: Message[]) => {
     setIsTyping(true);
-    const qLower = query.toLowerCase();
+    try {
+      const historico = historicoAtual
+        .filter(m => m.id !== 'welcome')
+        .map(m => ({ role: m.sender === 'user' ? 'user' as const : 'model' as const, texto: m.text }));
 
-    setTimeout(() => {
-      let responseText = '';
-      let action: Message['suggestedAction'] = undefined;
-      let table: Message['tableData'] = undefined;
+      const res = await fetch('/api/copiloto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensagem: query, historico }),
+      });
+      const json = await res.json();
 
-      // 1. QUERY: Preço acima do mercado / fora do preço / Batel
-      if (qLower.includes('preco') || qLower.includes('preço') || qLower.includes('batel') || qLower.includes('fora')) {
-        const batelOut = mockImoveis.filter(i => {
-          const diff = i.preco_sugerido_ia ? ((i.preco_atual - i.preco_sugerido_ia) / i.preco_sugerido_ia) * 100 : 0;
-          return diff > 10 && (qLower.includes('batel') ? i.bairro.toLowerCase() === 'batel' : true);
-        });
-
-        responseText = `Encontrei **${batelOut.length} imóveis** com preço acima do sugerido pela IA (desvio > 10% do mercado regional). Isso prejudica diretamente a nota de qualidade e a velocidade de venda nos portais. Veja os casos mais críticos:`;
-        
-        table = {
-          headers: ['Código', 'Título', 'Bairro', 'Preço Atual', 'Sugerido IA', 'Desvio'],
-          rows: batelOut.slice(0, 5).map(i => {
-            const desvio = i.preco_sugerido_ia ? ((i.preco_atual - i.preco_sugerido_ia) / i.preco_sugerido_ia) * 100 : 0;
-            return [
-              i.id_externo,
-              i.titulo.slice(0, 20) + '...',
-              i.bairro,
-              formatCurrency(i.preco_atual),
-              formatCurrency(i.preco_sugerido_ia || 0),
-              `+${desvio.toFixed(1)}%`
-            ];
-          })
-        };
-
-        action = {
-          label: 'Ajustar preços sugeridos pela IA',
-          actionType: 'adjust_prices',
-          details: 'Alinha automaticamente os preços do feed XML com a calculadora de mercado da IA.'
-        };
-      } 
-      // 2. QUERY: Qualidade / Enriquecimento / XML
-      else if (qLower.includes('qualidade') || qLower.includes('xml') || qLower.includes('anuncio') || qLower.includes('anúncio')) {
-        const ruins = mockImoveis.filter(i => i.nota_qualidade < 5.5);
-        responseText = `Estudei o feed XML. Atualmente, há **${ruins.length} anúncios** com Nota de Qualidade crítica (abaixo de 5.5). Os principais problemas encontrados foram:\n\n1. Ausência de endereço completo (CEP/Número).\n2. Descrições com menos de 100 caracteres.\n3. Falta de mídias (menos de 8 fotos).\n\nPodemos rodar o motor para gerar descrições enriquecidas e normalizar os títulos automaticamente.`;
-        
-        table = {
-          headers: ['Código', 'Título', 'Bairro', 'Nota', 'Critérios Ausentes'],
-          rows: ruins.slice(0, 5).map(i => {
-            const ausentes = i.criterios_qualidade.filter(c => !c.presente).map(c => c.label).slice(0, 2).join(', ');
-            return [
-              i.id_externo,
-              i.titulo.slice(0, 22) + '...',
-              i.bairro,
-              `${i.nota_qualidade}/10`,
-              ausentes || 'Fotos insuficientes'
-            ];
-          })
-        };
-
-        action = {
-          label: 'Rodar Enriquecimento XML IA',
-          actionType: 'enrich_xml',
-          details: 'Eleva a nota de qualidade resolvendo automaticamente endereços, metragens e descrições.'
-        };
-      }
-      // 3. QUERY: Destaques / Investimento / ROI
-      else if (qLower.includes('destaque') || qLower.includes('roi') || qLower.includes('investir') || qLower.includes('portal')) {
-        const topFarol = mockImoveis.filter(i => i.status_farol === 'venda_iminente' && i.nota_qualidade >= 8 && !i.destaque_ativo);
-        responseText = `Analisei o ROI dos canais. O ZAP e OLX estão com maior taxa de conversão (média de 3.2x de ROI). Identifiquei **${topFarol.length} imóveis "Venda Iminente"** com nota de qualidade excelente que ainda **não possuem destaques ativos**. Alocar o orçamento restante neles trará o maior retorno em leads.`;
-        
-        table = {
-          headers: ['Código', 'Título', 'Bairro', 'Preço', 'Nota Qualidade', 'ROI Estimado'],
-          rows: topFarol.slice(0, 5).map(i => [
-            i.id_externo,
-            i.titulo.slice(0, 20) + '...',
-            i.bairro,
-            formatCurrency(i.preco_atual),
-            `${i.nota_qualidade}/10`,
-            '~4.8x ROI'
-          ])
-        };
-
-        action = {
-          label: 'Distribuir Destaques por IA',
-          actionType: 'optimize_highlights',
-          details: 'Prioriza alocação de destaques pagos nos 5 imóveis de maior liquidez e qualidade.'
-        };
-      }
-      // 4. QUERY: Padrão de saudação/geral
-      else {
-        responseText = `Entendido. Executei uma análise geral no banco de dados e nos feeds:\n\n- **Preço**: 18 imóveis estão com desvio de preço regional superior a 15%.\n- **Qualidade**: Nota média do feed XML está em **7.6/10**.\n- **Destaques**: Sobram 35 destaques disponíveis no ZAP/OLX para alocação inteligente.\n\nExperimente me pedir: "Quais imóveis precisam de enriquecimento de XML?" ou "Quais estão com preço fora de mercado?" para realizarmos as alterações.`;
-      }
+      if (!json.success) throw new Error(json.message || 'Erro ao consultar a IA.');
 
       setMessages(prev => [
         ...prev,
         {
           id: String(Date.now()),
           sender: 'ai',
-          text: responseText,
+          text: json.data.resposta,
           timestamp: new Date().toLocaleTimeString().slice(0, 5),
-          suggestedAction: action,
-          tableData: table,
+          rotaSugerida: json.data.rota_sugerida || null,
+          rotaLabel: json.data.rota_label || null,
+          relatorio: json.data.relatorio || null,
+          propostaAcao: json.data.proposta_acao || null,
+          propostaStatus: json.data.proposta_acao ? 'pendente' : undefined,
         },
       ]);
+    } catch (err: any) {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: String(Date.now()),
+          sender: 'ai',
+          text: `Não consegui falar com a IA agora: ${err.message || 'erro desconhecido'}. Confere se a chave do Gemini está configurada certo e tenta de novo.`,
+          timestamp: new Date().toLocaleTimeString().slice(0, 5),
+          erro: true,
+        },
+      ]);
+    } finally {
       setIsTyping(false);
-    }, 1200);
+    }
+  };
+
+  const confirmarProposta = async (msgId: string, proposta: PropostaAcao) => {
+    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, propostaStatus: 'confirmando' } : m));
+    try {
+      if (proposta.tipo === 'criar_destaque') {
+        const { imovel, portal, tipo_destaque } = proposta.payload;
+        const res = await fetch('/api/destaques', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imovel, portal, tipo_destaque, score_ia: 0 }),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message);
+      } else {
+        const { lead_id, novo_status } = proposta.payload;
+        const res = await fetch('/api/leads-avaliacao', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: lead_id, status: novo_status }),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message);
+      }
+      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, propostaStatus: 'confirmado' } : m));
+    } catch {
+      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, propostaStatus: 'erro' } : m));
+    }
+  };
+
+  const descartarProposta = (msgId: string) => {
+    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, propostaStatus: 'descartado' } : m));
+  };
+
+  const enviarPergunta = (texto: string) => {
+    if (!texto.trim() || isTyping) return;
+
+    const novaMensagem: Message = {
+      id: String(Date.now()),
+      sender: 'user',
+      text: texto,
+      timestamp: new Date().toLocaleTimeString().slice(0, 5),
+    };
+    const historicoAtual = [...messages, novaMensagem];
+    setMessages(historicoAtual);
+    setInputValue('');
+
+    processQuery(texto, historicoAtual);
   };
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
-
-    const userText = inputValue;
-    setMessages(prev => [
-      ...prev,
-      {
-        id: String(Date.now()),
-        sender: 'user',
-        text: userText,
-        timestamp: new Date().toLocaleTimeString().slice(0, 5),
-      },
-    ]);
-    setInputValue('');
-
-    processQuery(userText);
-  };
-
-  // Tratar ação sugerida
-  const handleExecuteAction = (actionType: string) => {
-    setIsTyping(true);
-    setTimeout(() => {
-      let resultText = '';
-      if (actionType === 'adjust_prices') {
-        resultText = '✅ **Ajuste Concluído!** Alterei os preços do feed XML para os 5 imóveis do Batel identificados. Eles foram atualizados no banco de dados e replicados para a carga VrSync.';
-      } else if (actionType === 'enrich_xml') {
-        resultText = '✨ **Enriquecimento Concluído!** Rodamos o processamento das regras do motor XML. O endereço e metragens foram normalizados e as descrições vazias foram geradas por IA. Nota geral subiu de **6.2 para 8.5**!';
-      } else if (actionType === 'optimize_highlights') {
-        resultText = '⚡ **Otimização Concluída!** Alocamos 5 destaques premium no ZAP/OLX para os imóveis de alta liquidez recomendados. Acompanhe a projeção de leads na aba de Destaques.';
-      }
-
-      setMessages(prev => [
-        ...prev,
-        {
-          id: String(Date.now()),
-          sender: 'ai',
-          text: resultText,
-          timestamp: new Date().toLocaleTimeString().slice(0, 5),
-        },
-      ]);
-      setIsTyping(false);
-    }, 1500);
+    enviarPergunta(inputValue);
   };
 
   return (
     <>
       <Header
-        title="Orquestrador IA"
-        subtitle="Agente inteligente de auditoria e orquestração do portfólio"
+        title="Lisa · Orquestrador IA"
+        subtitle="Agente com Gemini, dados reais do painel e navegação entre seções"
       />
       <div className="page-body animate-fadeIn">
         <div className={styles.copilotContainer}>
@@ -220,19 +207,15 @@ export default function CopilotoPage() {
                 <Cpu size={20} color="var(--primary-hover)" />
               </div>
               <div>
-                <div className={styles.agentName}>Orquestrador BrokerImobAI</div>
-                <div className={styles.agentStatusText}>Online · Estudando XML</div>
+                <div className={styles.agentName}>Lisa · Orquestrador IA</div>
+                <div className={styles.agentStatusText}>Online · Gemini + dados reais do painel</div>
               </div>
             </div>
 
             <div className={styles.statsSection}>
               <div className={styles.statRow}>
-                <span className={styles.statLabel}>Anúncios Analisados</span>
+                <span className={styles.statLabel}>Imóveis no portfólio</span>
                 <span className={styles.statVal}>{mockImoveis.length}</span>
-              </div>
-              <div className={styles.statRow}>
-                <span className={styles.statLabel}>Erros XML Corrigidos</span>
-                <span className={styles.statVal} style={{ color: '#22c55e' }}>+47 este mês</span>
               </div>
               <div className={styles.statRow}>
                 <span className={styles.statLabel}>CPL Médio via IA</span>
@@ -242,14 +225,23 @@ export default function CopilotoPage() {
 
             <div className={styles.suggestionsTitle}>Perguntas sugeridas:</div>
             <div className={styles.suggestionsList}>
-              <button onClick={() => { setInputValue('Quais imóveis estão com preço muito acima do sugerido?'); }} className={styles.suggestionBtn}>
+              <button onClick={() => enviarPergunta('Quais imóveis estão com preço muito acima do sugerido?')} disabled={isTyping} className={styles.suggestionBtn}>
                 🔍 Imóveis fora do preço
               </button>
-              <button onClick={() => { setInputValue('Quais anúncios estão com qualidade baixa no XML?'); }} className={styles.suggestionBtn}>
+              <button onClick={() => enviarPergunta('Quais anúncios estão com qualidade baixa?')} disabled={isTyping} className={styles.suggestionBtn}>
                 📊 Anúncios com nota baixa
               </button>
-              <button onClick={() => { setInputValue('Onde devo alocar meus destaques para maior ROI?'); }} className={styles.suggestionBtn}>
+              <button onClick={() => enviarPergunta('Onde devo alocar meus destaques para maior ROI?')} disabled={isTyping} className={styles.suggestionBtn}>
                 ⚡ Sugestão de destaques IA
+              </button>
+              <button onClick={() => enviarPergunta('Como está o farol de venda hoje?')} disabled={isTyping} className={styles.suggestionBtn}>
+                🏠 Farol de venda
+              </button>
+              <button onClick={() => enviarPergunta('Como está o farol de locação hoje?')} disabled={isTyping} className={styles.suggestionBtn}>
+                🔑 Farol de locação
+              </button>
+              <button onClick={() => enviarPergunta('Gera um relatório de qualidade dos anúncios com nota crítica.')} disabled={isTyping} className={styles.suggestionBtn}>
+                📄 Gerar relatório de qualidade
               </button>
             </div>
           </div>
@@ -263,42 +255,106 @@ export default function CopilotoPage() {
                     {msg.sender === 'ai' ? <Bot size={16} /> : <User size={16} />}
                   </div>
                   <div className={styles.messageContent}>
-                    <div className={styles.messageText}>{msg.text}</div>
-                    
-                    {/* Render table results if present */}
-                    {msg.tableData && (
-                      <div className={styles.tableWrap}>
-                        <table className={styles.chatTable}>
-                          <thead>
-                            <tr>
-                              {msg.tableData.headers.map((h, i) => <th key={i}>{h}</th>)}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {msg.tableData.rows.map((row, idx) => (
-                              <tr key={idx}>
-                                {row.map((cell, cidx) => <td key={cidx}>{cell}</td>)}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                    <div className={styles.messageText} style={msg.erro ? { color: 'var(--farol-baixo, #ef4444)' } : undefined}>
+                      {msg.erro && <AlertCircle size={13} style={{ display: 'inline', marginRight: 4, verticalAlign: -2 }} />}
+                      {msg.text}
+                    </div>
+
+                    {/* Relatório estruturado gerado pela Lisa — salvo em /relatorios */}
+                    {msg.relatorio && (
+                      <div className={styles.actionCard}>
+                        <div className={styles.actionMeta}>
+                          <FileText size={13} color="var(--farol-potencial)" />
+                          <span>Relatório gerado</span>
+                        </div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, marginTop: 4 }}>{msg.relatorio.titulo}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 3, lineHeight: 1.5 }}>{msg.relatorio.resumo}</div>
+                        <button
+                          onClick={() => router.push(`/relatorios?id=${msg.relatorio!.id}`)}
+                          className="btn btn-primary"
+                          style={{ fontSize: '0.78rem', gap: 6, marginTop: '0.6rem' }}
+                        >
+                          Ver relatório completo <ArrowRight size={13} />
+                        </button>
                       </div>
                     )}
 
-                    {/* Action buttons suggested by AI */}
-                    {msg.suggestedAction && (
+                    {/* Proposta de ação — nunca executa sozinha, só com confirmação */}
+                    {msg.propostaAcao && (
+                      <div className={styles.actionCard}>
+                        <div className={styles.actionMeta}>
+                          <Zap size={13} color="var(--farol-potencial)" />
+                          <span>Ação proposta — precisa da sua confirmação</span>
+                        </div>
+
+                        {msg.propostaAcao.tipo === 'criar_destaque' ? (
+                          <div style={{ fontSize: '0.8rem', marginTop: 4 }}>
+                            <div style={{ fontWeight: 700 }}>{msg.propostaAcao.payload.imovel.titulo}</div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>
+                              {msg.propostaAcao.payload.imovel.bairro} · {formatCurrency(msg.propostaAcao.payload.imovel.preco_atual)} · Destaque em {msg.propostaAcao.payload.portal.toUpperCase()} ({msg.propostaAcao.payload.tipo_destaque.replace('_', ' ')})
+                            </div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.76rem', marginTop: 4, lineHeight: 1.5 }}>{msg.propostaAcao.payload.justificativa}</div>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '0.8rem', marginTop: 4 }}>
+                            <div style={{ fontWeight: 700 }}>{msg.propostaAcao.payload.lead_nome}</div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>
+                              {STATUS_LEAD_LABEL[msg.propostaAcao.payload.status_atual] || msg.propostaAcao.payload.status_atual} → {STATUS_LEAD_LABEL[msg.propostaAcao.payload.novo_status] || msg.propostaAcao.payload.novo_status}
+                            </div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.76rem', marginTop: 4, lineHeight: 1.5 }}>{msg.propostaAcao.payload.justificativa}</div>
+                          </div>
+                        )}
+
+                        {(!msg.propostaStatus || msg.propostaStatus === 'pendente') && (
+                          <div style={{ display: 'flex', gap: 8, marginTop: '0.6rem' }}>
+                            <button
+                              onClick={() => confirmarProposta(msg.id, msg.propostaAcao!)}
+                              className="btn btn-primary"
+                              style={{ fontSize: '0.78rem', gap: 6 }}
+                            >
+                              <CheckCircle2 size={13} /> Confirmar
+                            </button>
+                            <button
+                              onClick={() => descartarProposta(msg.id)}
+                              className="btn"
+                              style={{ fontSize: '0.78rem', gap: 6 }}
+                            >
+                              <XCircle size={13} /> Descartar
+                            </button>
+                          </div>
+                        )}
+                        {msg.propostaStatus === 'confirmando' && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: '0.6rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                            <Loader2 size={13} className={styles.spin} /> Aplicando...
+                          </div>
+                        )}
+                        {msg.propostaStatus === 'confirmado' && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: '0.6rem', fontSize: '0.78rem', color: 'var(--farol-iminente, #22c55e)' }}>
+                            <CheckCircle2 size={13} /> Ação aplicada.
+                          </div>
+                        )}
+                        {msg.propostaStatus === 'descartado' && (
+                          <div style={{ marginTop: '0.6rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>Descartado.</div>
+                        )}
+                        {msg.propostaStatus === 'erro' && (
+                          <div style={{ marginTop: '0.6rem', fontSize: '0.78rem', color: 'var(--farol-baixo, #ef4444)' }}>Não consegui aplicar. Tenta de novo pela tela correspondente.</div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Navegação real sugerida pela IA — leva de verdade pra seção */}
+                    {msg.rotaSugerida && (
                       <div className={styles.actionCard}>
                         <div className={styles.actionMeta}>
                           <Sparkles size={13} color="var(--farol-potencial)" />
-                          <span>Ação Recomendada por IA</span>
+                          <span>Seção relacionada</span>
                         </div>
-                        <div className={styles.actionDetails}>{msg.suggestedAction.details}</div>
                         <button
-                          onClick={() => handleExecuteAction(msg.suggestedAction!.actionType)}
+                          onClick={() => router.push(msg.rotaSugerida!)}
                           className="btn btn-primary"
                           style={{ fontSize: '0.78rem', gap: 6, marginTop: '0.5rem' }}
                         >
-                          {msg.suggestedAction.label} <ArrowRight size={13} />
+                          {msg.rotaLabel || 'Ver seção'} <ArrowRight size={13} />
                         </button>
                       </div>
                     )}
@@ -329,7 +385,7 @@ export default function CopilotoPage() {
               <input
                 type="text"
                 className="input"
-                placeholder="Pergunte ao Orquestrador IA sobre preços, qualidade ou alocação do XML..."
+                placeholder="Pergunte à Lisa sobre preços, qualidade, farol, destaques ou leads..."
                 value={inputValue}
                 onChange={e => setInputValue(e.target.value)}
                 disabled={isTyping}

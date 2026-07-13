@@ -7,7 +7,7 @@
 export type FarolStatus = 'venda_iminente' | 'venda_potencial' | 'baixo_potencial';
 export type ImovelTipo = 'apartamento' | 'casa' | 'studio' | 'terreno' | 'comercial' | 'cobertura' | 'flat';
 export type ImovelFinalidade = 'venda' | 'aluguel';
-export type PortalSlug = 'olx' | 'zap' | 'vivareal' | 'chaves' | 'imovelweb' | 'meta' | 'google';
+export type PortalSlug = 'olx' | 'zap' | 'vivareal' | 'portal62' | 'imovelweb' | 'meta' | 'google';
 export type QualidadeCriterio = 'endereco' | 'preco' | 'descricao' | 'fotos' | 'video' | 'titulo' | 'area';
 
 // --- Quality ---
@@ -92,7 +92,7 @@ export interface ImovelMetricas {
 
 // --- XML ---
 
-export type XMLFormato = 'vrsync' | 'zap_native' | 'chaves_native' | 'imovelweb_native';
+export type XMLFormato = 'vrsync' | 'zap_native' | 'portal62_native' | 'imovelweb_native';
 
 export interface CargaXML {
   id: string;

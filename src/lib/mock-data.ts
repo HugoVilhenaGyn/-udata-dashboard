@@ -194,7 +194,7 @@ function generateImovel(i: number): Imovel {
     status_farol: farol,
     nota_qualidade: nota,
     criterios_qualidade: criterios,
-    portais_publicados: ['olx', 'zap', seededRandom() > 0.5 ? 'vivareal' : 'chaves'].slice(0, rand(1, 3)) as any,
+    portais_publicados: ['olx', 'zap', seededRandom() > 0.5 ? 'vivareal' : 'portal62'].slice(0, rand(1, 3)) as any,
     historico_preco: [
       { data: randomDate(180), preco: Math.round(preco * 1.08), motivo: 'Valor inicial' },
       { data: randomDate(90), preco: Math.round(preco * 1.03), motivo: 'Ajuste de mercado' },
@@ -238,6 +238,12 @@ export const mockImoveis = imoveis;
 // =============================================
 // PORTALS
 // =============================================
+// Portais realmente contratados pela LOBO IMOVEIS: Grupo OLX (zap + olx +
+// vivareal, publicados via um único feed VRSync) e Portal 62 (portal local
+// de Goiânia, feed próprio). Chaves na Mão e ImovelWeb NÃO têm assinatura
+// ativa hoje — ficam listados como inativos/sem orçamento só pra não
+// quebrar telas que já referenciam esses slugs, mas não contam como
+// portal ativo em nenhum KPI.
 const mockPortaisBase: Portal[] = [
   {
     slug: 'zap', nome: 'ZAP Imóveis', cor: '#ff5a00',
@@ -264,8 +270,8 @@ const mockPortaisBase: Portal[] = [
     custo_por_lead: 14.6, api_disponivel: true,
   },
   {
-    slug: 'chaves', nome: 'Chaves na Mão', cor: '#e11d48',
-    formato_xml: 'chaves_native', ativo: true,
+    slug: 'portal62', nome: 'Portal 62', cor: '#e11d48',
+    formato_xml: 'portal62_native', ativo: true,
     destaques_disponiveis: 30, destaques_usados: 12,
     orcamento_mensal: 2500, orcamento_gasto: 900,
     leads_mes: 89, visualizacoes_mes: 5600,
@@ -273,19 +279,19 @@ const mockPortaisBase: Portal[] = [
   },
   {
     slug: 'imovelweb', nome: 'ImovelWeb', cor: '#059669',
-    formato_xml: 'imovelweb_native', ativo: true,
-    destaques_disponiveis: 25, destaques_usados: 18,
-    orcamento_mensal: 3500, orcamento_gasto: 2800,
-    leads_mes: 134, visualizacoes_mes: 8900,
-    custo_por_lead: 20.9, api_disponivel: true,
+    formato_xml: 'imovelweb_native', ativo: false,
+    destaques_disponiveis: 0, destaques_usados: 0,
+    orcamento_mensal: 0, orcamento_gasto: 0,
+    leads_mes: 0, visualizacoes_mes: 0,
+    custo_por_lead: 0, api_disponivel: false,
   },
   {
     slug: 'meta', nome: 'Meta Ads', cor: '#1877f2',
-    formato_xml: 'vrsync', ativo: true,
+    formato_xml: 'vrsync', ativo: false,
     destaques_disponiveis: 0, destaques_usados: 0,
-    orcamento_mensal: 4000, orcamento_gasto: 3100,
-    leads_mes: 156, visualizacoes_mes: 41000,
-    custo_por_lead: 19.9, api_disponivel: true,
+    orcamento_mensal: 0, orcamento_gasto: 0,
+    leads_mes: 0, visualizacoes_mes: 0,
+    custo_por_lead: 0, api_disponivel: true,
   },
   {
     slug: 'google', nome: 'Google Ads', cor: '#ea4335',
@@ -596,7 +602,7 @@ export const mockRegrasEnriquecimento: RegraEnriquecimento[] = [
     campo_alvo: 'endereco',
     condicao: 'endereco.length < 20 || !endereco.includes(",")',
     impacto_nota: 1.5,
-    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb'],
+    portais_alvo: ['olx', 'zap', 'vivareal', 'portal62'],
   },
   {
     id: 'rule-02',
@@ -608,7 +614,7 @@ export const mockRegrasEnriquecimento: RegraEnriquecimento[] = [
     condicao: 'descricao.length < 100',
     template: '{tipo} de {area_util}m² com {quartos} quartos e {vagas} vagas em {bairro}. {diferenciais}',
     impacto_nota: 2.0,
-    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb'],
+    portais_alvo: ['olx', 'zap', 'vivareal', 'portal62'],
   },
   {
     id: 'rule-03',
@@ -620,7 +626,7 @@ export const mockRegrasEnriquecimento: RegraEnriquecimento[] = [
     condicao: 'titulo.length < 20',
     template: '{Tipo} {quartos}q - {bairro}, {cidade}',
     impacto_nota: 0.5,
-    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb'],
+    portais_alvo: ['olx', 'zap', 'vivareal', 'portal62'],
   },
   {
     id: 'rule-04',
@@ -641,7 +647,7 @@ export const mockRegrasEnriquecimento: RegraEnriquecimento[] = [
     campo_alvo: 'preco_atual',
     condicao: 'preco_atual > (preco_medio_bairro * 1.2) || preco_atual < (preco_medio_bairro * 0.8)',
     impacto_nota: 0,
-    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb'],
+    portais_alvo: ['olx', 'zap', 'vivareal', 'portal62'],
   },
   {
     id: 'rule-06',
@@ -651,7 +657,7 @@ export const mockRegrasEnriquecimento: RegraEnriquecimento[] = [
     ativo: true,
     campo_alvo: 'nota_qualidade',
     impacto_nota: 0,
-    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb', 'meta', 'google'],
+    portais_alvo: ['olx', 'zap', 'vivareal', 'portal62'],
   },
   {
     id: 'rule-07',
@@ -661,7 +667,7 @@ export const mockRegrasEnriquecimento: RegraEnriquecimento[] = [
     ativo: true,
     campo_alvo: 'area_util',
     impacto_nota: 0.5,
-    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb'],
+    portais_alvo: ['olx', 'zap', 'vivareal', 'portal62'],
   },
   {
     id: 'rule-08',
@@ -672,7 +678,7 @@ export const mockRegrasEnriquecimento: RegraEnriquecimento[] = [
     campo_alvo: 'fotos',
     condicao: 'fotos.length < 8',
     impacto_nota: 2.5,
-    portais_alvo: ['olx', 'zap', 'vivareal', 'chaves', 'imovelweb'],
+    portais_alvo: ['olx', 'zap', 'vivareal', 'portal62'],
   },
 ];
 

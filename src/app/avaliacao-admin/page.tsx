@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import Header from '@/components/layout/Header';
 import { formatCurrency } from '@/lib/mock-data';
 import {
-  Users, Clock, CheckCircle2, TrendingUp, Save, ExternalLink, Loader2,
+  Users, Clock, CheckCircle2, TrendingUp, Save, ExternalLink, Loader2, Sparkles, FileText,
 } from 'lucide-react';
 import styles from './page.module.css';
 import { useLisaScreenContext } from '@/lib/lisa-context';
@@ -52,6 +53,13 @@ export default function AvaliacaoAdminPage() {
   const [config, setConfig] = useState<ConfigAvaliacao | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
+  // Estudo de mercado sob demanda, gerado pela Lisa (Orquestrador IA) pra
+  // embasar a conversa do corretor com o lead — reaproveita a mesma API do
+  // chat (/api/copiloto) e a ferramenta gerar_relatorio que ela já tem,
+  // só que com uma pergunta pronta descrevendo os dados do lead. Fica
+  // salvo em Relatórios, não é só uma resposta que some.
+  const [estudoStatus, setEstudoStatus] = useState<Record<string, 'carregando' | 'pronto' | 'erro'>>({});
+  const [estudoRelatorioId, setEstudoRelatorioId] = useState<Record<string, string>>({});
 
   useEffect(() => {
     Promise.all([
@@ -76,6 +84,40 @@ export default function AvaliacaoAdminPage() {
     } catch {
       setAviso('⚠️ Não foi possível salvar essa mudança de status. Tente de novo.');
       setTimeout(() => setAviso(null), 4000);
+    }
+  };
+
+  const pedirEstudoMercado = async (lead: LeadAvaliacao) => {
+    setEstudoStatus(prev => ({ ...prev, [lead.id]: 'carregando' }));
+    try {
+      const finalidadeTxt = lead.finalidade === 'venda' ? 'venda' : 'locação';
+      const mensagem = `Gere um relatório de estudo de mercado para embasar o atendimento do lead "${lead.nome}", que pediu uma avaliação de ${finalidadeTxt} de um imóvel do tipo "${lead.tipo}" no bairro "${lead.bairro}", com aproximadamente ${lead.area_util}m²${lead.quartos ? ` e ${lead.quartos} quartos` : ''}. Use estudo_mercado_por_segmento e comparáveis reais do portfólio nesse bairro/tipo/finalidade pra justificar uma faixa de valor de referência, cite a oferta e demanda reais (quantos comparáveis, leads e visualizações da semana nesse segmento) e feche com uma recomendação prática de precificação pro corretor levar pra conversa com esse cliente.`;
+
+      const res = await fetch('/api/copiloto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mensagem,
+          contextoTela: { secao: 'Avaliação Online (admin)', detalhe: `Lead: ${lead.nome} — ${finalidadeTxt} de ${lead.tipo} em ${lead.bairro}` },
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message);
+
+      if (json.data.relatorio?.id) {
+        setEstudoRelatorioId(prev => ({ ...prev, [lead.id]: json.data.relatorio.id }));
+        setEstudoStatus(prev => ({ ...prev, [lead.id]: 'pronto' }));
+      } else {
+        // A Lisa respondeu em texto mas não gerou um relatório estruturado
+        // dessa vez — não é um erro, só não veio no formato esperado.
+        setEstudoStatus(prev => ({ ...prev, [lead.id]: 'erro' }));
+        setAviso('⚠️ A Lisa respondeu, mas não gerou um relatório estruturado dessa vez. Tente novamente.');
+        setTimeout(() => setAviso(null), 5000);
+      }
+    } catch (err: any) {
+      setEstudoStatus(prev => ({ ...prev, [lead.id]: 'erro' }));
+      setAviso(`⚠️ ${err.message || 'Erro ao pedir o estudo de mercado à Lisa.'}`);
+      setTimeout(() => setAviso(null), 5000);
     }
   };
 
@@ -234,6 +276,7 @@ export default function AvaliacaoAdminPage() {
                     <th>Contato</th>
                     <th>Imóvel</th>
                     <th>Avaliação</th>
+                    <th>Estudo de mercado (Lisa)</th>
                     <th>Recebido em</th>
                     <th>Status</th>
                   </tr>
@@ -255,6 +298,28 @@ export default function AvaliacaoAdminPage() {
                         <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 400 }}>
                           {lead.comparaveis_usados > 0 ? `${lead.comparaveis_usados} comparáveis` : 'sem estimativa'}
                         </div>
+                      </td>
+                      <td style={{ fontSize: '0.78rem' }}>
+                        {estudoStatus[lead.id] === 'carregando' ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-muted)' }}>
+                            <Loader2 size={12} className={styles.spin} /> Gerando...
+                          </span>
+                        ) : estudoStatus[lead.id] === 'pronto' && estudoRelatorioId[lead.id] ? (
+                          <Link
+                            href={`/relatorios?id=${estudoRelatorioId[lead.id]}`}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#22c55e', fontWeight: 600, textDecoration: 'none' }}
+                          >
+                            <FileText size={12} /> Ver relatório
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={() => pedirEstudoMercado(lead)}
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.72rem', gap: 5, padding: '0.35rem 0.6rem' }}
+                          >
+                            <Sparkles size={12} /> Pedir à Lisa
+                          </button>
+                        )}
                       </td>
                       <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                         {new Date(lead.criado_em).toLocaleString('pt-BR')}

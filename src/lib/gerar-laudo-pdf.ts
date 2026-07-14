@@ -78,27 +78,37 @@ export function gerarLaudoPdfBuffer(relatorio: RelatorioLisa, contexto?: Context
 
       const table = (colunas: string[], linhas: string[][]) => {
         const colWidth = CONTENT_W / colunas.length;
-        const rowH = 20;
+        const cellW = colWidth - 10;
+        const headerH = 20;
         doc.moveDown(0.3);
-        ensureRowSpace(rowH);
+        ensureRowSpace(headerH);
         let y = doc.y;
 
-        doc.rect(MARGIN, y, CONTENT_W, rowH).fill(NAVY);
+        doc.rect(MARGIN, y, CONTENT_W, headerH).fill(NAVY);
         colunas.forEach((c, i) => {
           doc.fontSize(9).font('Helvetica-Bold').fillColor('#FFFFFF')
-            .text(c, MARGIN + i * colWidth + 5, y + 6, { width: colWidth - 10 });
+            .text(c, MARGIN + i * colWidth + 5, y + 6, { width: cellW });
         });
-        y += rowH;
+        y += headerH;
         doc.y = y;
 
         linhas.forEach((linha, ri) => {
+          // Altura da linha precisa acompanhar o texto que mais quebra
+          // linha (célula com texto longo), senão a linha seguinte
+          // sobrepõe visualmente o conteúdo desta (bug encontrado ao
+          // validar o PDF com dados reais de um relatório em produção).
+          doc.fontSize(9).font('Helvetica');
+          const rowH = Math.max(
+            20,
+            ...linha.map((cell) => doc.heightOfString(String(cell ?? ''), { width: cellW }) + 12)
+          );
           ensureRowSpace(rowH);
           y = doc.y;
           const bg = ri % 2 === 0 ? '#FFFFFF' : LIGHT;
           doc.rect(MARGIN, y, CONTENT_W, rowH).fill(bg);
           doc.fontSize(9).font('Helvetica').fillColor('#222222');
           linha.forEach((cell, ci) => {
-            doc.text(String(cell ?? ''), MARGIN + ci * colWidth + 5, y + 6, { width: colWidth - 10 });
+            doc.text(String(cell ?? ''), MARGIN + ci * colWidth + 5, y + 6, { width: cellW });
           });
           y += rowH;
           doc.y = y;

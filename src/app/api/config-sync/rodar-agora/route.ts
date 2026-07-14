@@ -13,11 +13,6 @@ import { verifySessionToken } from '@/lib/auth-service';
 // rota só espera ele terminar e devolve a entrada mais recente do
 // histórico pra UI atualizar sem precisar de um segundo fetch.
 
-const SCRIPTS: Record<'loft' | 'zap', string> = {
-  loft: 'sync-vista-full-feed.mjs',
-  zap: 'sync-vista-zap-feed.mjs',
-};
-
 async function getSession(req: NextRequest) {
   const cookieStore = await cookies();
   const token = cookieStore.get('udata_session')?.value;
@@ -37,7 +32,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'feed inválido — use "loft" ou "zap".' }, { status: 400 });
     }
 
-    const scriptPath = path.join(process.cwd(), 'scripts', SCRIPTS[feed]);
+    // Caminhos literais (não uma tabela indexada por variável) de propósito —
+    // o tracer de build do Next.js (usado pra saber quais arquivos incluir no
+    // deploy standalone) só resolve chamadas de child_process com um caminho
+    // estático; uma expressão dinâmica tipo SCRIPTS[feed] falha o build com
+    // "Module not found" mesmo sem nunca ser importada como módulo.
+    const scriptPath = feed === 'loft'
+      ? path.join(process.cwd(), 'scripts', 'sync-vista-full-feed.mjs')
+      : path.join(process.cwd(), 'scripts', 'sync-vista-zap-feed.mjs');
     const resultado = await new Promise<{ codigo: number | null; saida: string }>((resolve) => {
       const filho = spawn('node', [scriptPath], {
         env: { ...process.env, SYNC_TRIGGER: 'manual' },

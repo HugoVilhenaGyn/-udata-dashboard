@@ -124,6 +124,33 @@ const TOOLS = [
           required: ['lead_id', 'novo_status', 'justificativa'],
         },
       },
+      {
+        name: 'propor_atualizar_preco',
+        description:
+          'PROPÕE um novo preço (venda ou aluguel) para um imóvel específico — NÃO executa sozinha, apenas cria uma proposta que o usuário confirma com um clique; se confirmada, o preço é gravado de verdade no imóvel (fica no histórico de preço dele). Use sempre que, numa conversa sobre precificação, você chegar a um valor concreto recomendado (não apenas discutir a média do bairro em abstrato) — não fique só descrevendo o número no texto, proponha a mudança de fato.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            codigo_imovel: { type: 'STRING', description: 'Código do imóvel, ex: "5535"' },
+            preco_novo: { type: 'NUMBER', description: 'Novo valor de venda ou aluguel, em reais' },
+            justificativa: { type: 'STRING', description: 'Por que esse valor — cite dados reais (média/desvio do bairro, nota de qualidade, diferenciais, comparáveis)' },
+          },
+          required: ['codigo_imovel', 'preco_novo', 'justificativa'],
+        },
+      },
+      {
+        name: 'propor_enriquecer_anuncio',
+        description:
+          'PROPÕE corrigir automaticamente os critérios de qualidade ausentes de um anúncio (endereço, fotos, descrição, vídeo etc., conforme o que já foi identificado via pontuar_imovel) e recalcular a nota de qualidade — NÃO executa sozinha, cria uma proposta que o usuário confirma com um clique. Use quando pontuar_imovel mostrar critérios ausentes relevantes pro contexto da conversa (ex: falta de endereço prejudicando a precificação, ou nota baixa competindo com bairro concorrido).',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            codigo_imovel: { type: 'STRING' },
+            justificativa: { type: 'STRING', description: 'Quais critérios estão ausentes e por que corrigir agora importa (ex: impacto no algoritmo de relevância dos portais, na nota, no farol)' },
+          },
+          required: ['codigo_imovel', 'justificativa'],
+        },
+      },
     ],
   },
 ];
@@ -294,6 +321,46 @@ function executarProporCriarDestaque(args: any, db: DbSchema) {
   };
 }
 
+function executarProporAtualizarPreco(args: any, db: DbSchema) {
+  const codigo = String(args?.codigo_imovel || '').trim();
+  const imovel = db.imoveis.find(i => codigoImovel(i.id_externo) === codigo || i.id_externo === codigo);
+  if (!imovel) return { erro: `Imóvel "${codigo}" não encontrado — não é possível propor preço.` };
+
+  const preco_novo = Number(args?.preco_novo);
+  if (!preco_novo || preco_novo <= 0) return { erro: 'preco_novo inválido.' };
+
+  return {
+    id: imovel.id,
+    codigo: codigoImovel(imovel.id_externo),
+    titulo: imovel.titulo,
+    bairro: imovel.bairro,
+    finalidade: imovel.finalidade,
+    preco_atual: imovel.preco_atual,
+    preco_novo,
+    justificativa: String(args?.justificativa || ''),
+  };
+}
+
+function executarProporEnriquecerAnuncio(args: any, db: DbSchema) {
+  const codigo = String(args?.codigo_imovel || '').trim();
+  const imovel = db.imoveis.find(i => codigoImovel(i.id_externo) === codigo || i.id_externo === codigo);
+  if (!imovel) return { erro: `Imóvel "${codigo}" não encontrado — não é possível propor enriquecimento.` };
+
+  const criteriosAusentes = imovel.criterios_qualidade.filter(c => !c.presente);
+  if (criteriosAusentes.length === 0) {
+    return { erro: `O imóvel ${codigo} já tem todos os critérios de qualidade presentes — não há o que enriquecer.` };
+  }
+
+  return {
+    id: imovel.id,
+    codigo: codigoImovel(imovel.id_externo),
+    titulo: imovel.titulo,
+    nota_qualidade_atual: imovel.nota_qualidade,
+    criterios_ausentes: criteriosAusentes.map(c => c.label),
+    justificativa: String(args?.justificativa || ''),
+  };
+}
+
 function executarProporAtualizarStatusLead(args: any, db: DbSchema) {
   const lead = db.leadsAvaliacao.find(l => l.id === args?.lead_id);
   if (!lead) return { erro: `Lead "${args?.lead_id}" não encontrado.` };
@@ -364,7 +431,7 @@ FERRAMENTAS DISPONÍVEIS E QUANDO USAR:
 - pontuar_imovel: sempre que for falar números específicos de UM imóvel (nota, critérios, desvio de preço), chame essa ferramenta pelo código em vez de confiar só no resumo — ela traz o detalhe completo e real.
 - gerar_relatorio: quando o usuário pedir "relatório", "resumo pra conferência", "documento", ou quando a análise tiver várias partes/tabelas — gera algo salvo, revisável depois, não só uma mensagem de chat.
 - navegar: sugestão complementar de seção, depois de já ter respondido de verdade.
-- propor_criar_destaque / propor_atualizar_status_lead: quando identificar uma ação de negócio concreta a fazer (ativar destaque em imóvel de alto potencial, avançar status de um lead) — SEMPRE proponha, NUNCA diga que "já fez"; a ação só acontece se o usuário confirmar na tela.
+- propor_criar_destaque / propor_atualizar_status_lead / propor_atualizar_preco / propor_enriquecer_anuncio: quando identificar uma ação de negócio concreta a fazer (ativar destaque em imóvel de alto potencial, avançar status de um lead, mudar o preço de um imóvel, corrigir critérios de qualidade ausentes) — SEMPRE proponha, NUNCA diga que "já fez"; a ação só acontece se o usuário confirmar na tela. Isso é o que diferencia você de um chatbot que só comenta números: quando a conversa chega numa recomendação concreta e acionável, transforme em proposta de verdade, não deixe só no texto.
 
 Regras:
 - Responda sempre em português do Brasil, direto e objetivo, sem enrolação.
@@ -372,7 +439,12 @@ Regras:
 - Quando o usuário pedir uma lista, contagem ou análise de imóveis, responda com a lista completa e real usando os dados de "lista_*" — enumere cada item. NUNCA substitua a resposta por um redirecionamento genérico quando os dados já estão disponíveis.
 - Para estudo de mercado (oferta/demanda/precificação), use "estudo_mercado_por_segmento" (portfólio próprio, real) e os documentos de pesquisa enviados (mercado externo) — sempre deixando claro qual é a fonte de cada número.
 - Seja específico: cite códigos de imóveis reais, nunca fale em termos vagos tipo "vários imóveis".
-- Depois de usar uma ferramenta, sempre feche com uma resposta em texto explicando o resultado pro usuário — nunca deixe a última mensagem ser só a chamada da ferramenta.`;
+- Depois de usar uma ferramenta, sempre feche com uma resposta em texto explicando o resultado pro usuário — nunca deixe a última mensagem ser só a chamada da ferramenta.
+- Nunca use notação LaTeX ou matemática (tipo "$\\text{m}^2$" ou "\\frac{}{}"). Escreva direto em texto normal: "m²", "R$/m²", "28%". O chat não renderiza LaTeX, então isso aparece quebrado pro usuário.
+- Nunca cite o nome técnico de uma ferramenta/função (ex: "navegar", "propor_criar_destaque", "pontuar_imovel") na resposta pro usuário — descreva a ação em linguagem natural (ex: "posso te levar pra tela de Farol de Oportunidade" em vez de "usar a ferramenta navegar").
+- Toda vez que citar um percentual calculado (variação, redução, desconto), refaça a conta mentalmente antes de responder: percentual de redução = (valor_antigo − valor_novo) / valor_antigo × 100, e o resultado NUNCA pode passar de 100% (não dá pra reduzir um preço em mais de 100%). Exemplo obrigatório de referência: reduzir de R$4.200 para R$1.680 é uma queda de 60% — NÃO 150% (cálculo: (4200-1680)/4200 = 0,60 = 60%). Se a sua conta der um número acima de 100% numa redução de preço, ela está errada — refaça antes de responder. Se dois números derivados de você mesma não baterem entre si, prefira omitir o percentual a citar um valor errado.
+- A média de R$/m² de um bairro (seja do portfólio ou de pesquisa externa) é só UM parâmetro de referência, nunca um teto rígido — principalmente em bairros nobres/alto padrão (ex: Setor Marista, Jardim Goiás, Setor Bueno). Antes de recomendar "baixar pro preço médio", considere: (1) o imóvel é novo ou reformado? (2) tem boa apresentação (fotos de qualidade, poucos critérios de qualidade faltando)? (3) tem diferenciais (vista, andar alto, lazer completo, vaga extra)? Se sim, o preço justo pode ficar ACIMA da média do bairro — cite o desvio-padrão/faixa de preços do segmento quando os dados permitirem, não só a média isolada, e diga explicitamente que a nota de qualidade e as fotos do anúncio são um parâmetro de ajuste sobre a média, não o contrário.
+- Você é o orquestrador de ação do painel, não só um consultor de texto: sempre que uma análise (precificação, qualidade, destaque, lead) chegar a uma recomendação específica e executável, feche a resposta chamando a ferramenta de proposta correspondente (propor_atualizar_preco, propor_enriquecer_anuncio, propor_criar_destaque ou propor_atualizar_status_lead) — em vez de só escrever "recomendo mudar o preço para R$X" ou "vale corrigir o endereço", proponha a mudança de fato pra o usuário confirmar com um clique. Só decida NÃO propor quando a análise for genuinamente exploratória (o usuário só pediu contexto/comparação) ou quando faltar dado suficiente pra uma recomendação concreta.`;
 
     let contents: any[] = [
       ...(historico || []).map(h => ({ role: h.role, parts: [{ text: h.texto }] })),
@@ -381,7 +453,7 @@ Regras:
 
     let finalText = '';
     let relatorioGerado: RelatorioLisa | null = null;
-    let propostaAcao: { tipo: 'criar_destaque' | 'atualizar_status_lead'; payload: any } | null = null;
+    let propostaAcao: { tipo: 'criar_destaque' | 'atualizar_status_lead' | 'atualizar_preco' | 'enriquecer_anuncio'; payload: any } | null = null;
     let rotaSugerida: string | null = null;
     let rotaLabel: string | null = null;
 
@@ -467,6 +539,26 @@ Regras:
             const proposta = executarProporAtualizarStatusLead(args, db);
             if (!proposta.erro) {
               propostaAcao = { tipo: 'atualizar_status_lead', payload: proposta };
+              resultado = { recebido: true, aguardando_confirmacao_usuario: true };
+            } else {
+              resultado = proposta;
+            }
+            break;
+          }
+          case 'propor_atualizar_preco': {
+            const proposta = executarProporAtualizarPreco(args, db);
+            if (!proposta.erro) {
+              propostaAcao = { tipo: 'atualizar_preco', payload: proposta };
+              resultado = { recebido: true, aguardando_confirmacao_usuario: true };
+            } else {
+              resultado = proposta;
+            }
+            break;
+          }
+          case 'propor_enriquecer_anuncio': {
+            const proposta = executarProporEnriquecerAnuncio(args, db);
+            if (!proposta.erro) {
+              propostaAcao = { tipo: 'enriquecer_anuncio', payload: proposta };
               resultado = { recebido: true, aguardando_confirmacao_usuario: true };
             } else {
               resultado = proposta;

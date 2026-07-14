@@ -41,7 +41,33 @@ interface PropostaAtualizarLead {
   payload: { lead_id: string; lead_nome: string; status_atual: string; novo_status: string; justificativa: string };
 }
 
-type PropostaAcao = PropostaCriarDestaque | PropostaAtualizarLead;
+interface PropostaAtualizarPreco {
+  tipo: 'atualizar_preco';
+  payload: {
+    id: string;
+    codigo: string;
+    titulo: string;
+    bairro: string;
+    finalidade: string;
+    preco_atual: number;
+    preco_novo: number;
+    justificativa: string;
+  };
+}
+
+interface PropostaEnriquecerAnuncio {
+  tipo: 'enriquecer_anuncio';
+  payload: {
+    id: string;
+    codigo: string;
+    titulo: string;
+    nota_qualidade_atual: number;
+    criterios_ausentes: string[];
+    justificativa: string;
+  };
+}
+
+type PropostaAcao = PropostaCriarDestaque | PropostaAtualizarLead | PropostaAtualizarPreco | PropostaEnriquecerAnuncio;
 
 type PropostaStatus = 'pendente' | 'confirmando' | 'confirmado' | 'descartado' | 'erro';
 
@@ -149,12 +175,30 @@ export default function CopilotoPage() {
         });
         const json = await res.json();
         if (!json.success) throw new Error(json.message);
-      } else {
+      } else if (proposta.tipo === 'atualizar_status_lead') {
         const { lead_id, novo_status } = proposta.payload;
         const res = await fetch('/api/leads-avaliacao', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: lead_id, status: novo_status }),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message);
+      } else if (proposta.tipo === 'atualizar_preco') {
+        const { id, preco_novo, justificativa } = proposta.payload;
+        const res = await fetch(`/api/imoveis/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ acao: 'atualizar_preco', preco_novo, motivo: justificativa }),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message);
+      } else if (proposta.tipo === 'enriquecer_anuncio') {
+        const { id } = proposta.payload;
+        const res = await fetch(`/api/imoveis/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ acao: 'enriquecer_anuncio' }),
         });
         const json = await res.json();
         if (!json.success) throw new Error(json.message);
@@ -287,7 +331,7 @@ export default function CopilotoPage() {
                           <span>Ação proposta — precisa da sua confirmação</span>
                         </div>
 
-                        {msg.propostaAcao.tipo === 'criar_destaque' ? (
+                        {msg.propostaAcao.tipo === 'criar_destaque' && (
                           <div style={{ fontSize: '0.8rem', marginTop: 4 }}>
                             <div style={{ fontWeight: 700 }}>{msg.propostaAcao.payload.imovel.titulo}</div>
                             <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>
@@ -295,11 +339,30 @@ export default function CopilotoPage() {
                             </div>
                             <div style={{ color: 'var(--text-secondary)', fontSize: '0.76rem', marginTop: 4, lineHeight: 1.5 }}>{msg.propostaAcao.payload.justificativa}</div>
                           </div>
-                        ) : (
+                        )}
+                        {msg.propostaAcao.tipo === 'atualizar_status_lead' && (
                           <div style={{ fontSize: '0.8rem', marginTop: 4 }}>
                             <div style={{ fontWeight: 700 }}>{msg.propostaAcao.payload.lead_nome}</div>
                             <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>
                               {STATUS_LEAD_LABEL[msg.propostaAcao.payload.status_atual] || msg.propostaAcao.payload.status_atual} → {STATUS_LEAD_LABEL[msg.propostaAcao.payload.novo_status] || msg.propostaAcao.payload.novo_status}
+                            </div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.76rem', marginTop: 4, lineHeight: 1.5 }}>{msg.propostaAcao.payload.justificativa}</div>
+                          </div>
+                        )}
+                        {msg.propostaAcao.tipo === 'atualizar_preco' && (
+                          <div style={{ fontSize: '0.8rem', marginTop: 4 }}>
+                            <div style={{ fontWeight: 700 }}>{msg.propostaAcao.payload.titulo}</div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>
+                              {msg.propostaAcao.payload.bairro} · {formatCurrency(msg.propostaAcao.payload.preco_atual)} → {formatCurrency(msg.propostaAcao.payload.preco_novo)}
+                            </div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.76rem', marginTop: 4, lineHeight: 1.5 }}>{msg.propostaAcao.payload.justificativa}</div>
+                          </div>
+                        )}
+                        {msg.propostaAcao.tipo === 'enriquecer_anuncio' && (
+                          <div style={{ fontSize: '0.8rem', marginTop: 4 }}>
+                            <div style={{ fontWeight: 700 }}>{msg.propostaAcao.payload.titulo}</div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>
+                              Nota atual {msg.propostaAcao.payload.nota_qualidade_atual} · corrigir: {msg.propostaAcao.payload.criterios_ausentes.join(', ')}
                             </div>
                             <div style={{ color: 'var(--text-secondary)', fontSize: '0.76rem', marginTop: 4, lineHeight: 1.5 }}>{msg.propostaAcao.payload.justificativa}</div>
                           </div>

@@ -1,0 +1,84 @@
+.buscaWrap {
+  position: relative;
+  max-width: 420px;
+  margin: 0 0 1.25rem;
+}
+
+.buscaIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.buscaInput {
+  width: 100%;
+  padding: 0.6rem 0.75rem 0.6rem 2.25rem;
+  border-radius: var(--radius, 8px);
+  border: 1px solid var(--border);
+  background: var(--bg-card, transparent);
+  color: inherit;
+  font-size: 0.85rem;
+}
+
+.aviso {
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius, 8px);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  font-size: 0.82rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1.75rem 0 0.75rem;
+}
+
+.sectionTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.historicoLista {
+  display: flex;
+  flex-direction: column;
+}
+
+.historicoItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.6rem 1rem;
+  font-size: 0.82rem;
+  text-decoration: none;
+  color: inherit;
+  border-bottom: 1px solid var(--border);
+}
+
+.historicoItem:last-child {
+  border-bottom: none;
+}
+
+.historicoItem:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.04));
+}
+
+.historicoData {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}

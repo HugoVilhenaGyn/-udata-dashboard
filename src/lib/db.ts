@@ -67,6 +67,12 @@ export interface LeadAvaliacao {
   comparaveis_usados: number;
   criado_em: string;
   status: 'novo' | 'em_atendimento' | 'atendido';
+  // Estudo de mercado automático gerado pela Lisa assim que o lead chega
+  // pela calculadora pública (ver POST /api/leads-avaliacao) — dispara em
+  // background, sem bloquear a resposta ao visitante. 'erro' também cobre
+  // leads antigos que nunca tiveram o campo populado.
+  estudo_mercado_status?: 'gerando' | 'pronto' | 'erro';
+  estudo_mercado_relatorio_id?: string;
 }
 
 export interface ConfigAvaliacao {

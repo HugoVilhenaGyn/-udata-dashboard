@@ -25,6 +25,8 @@ interface LeadAvaliacao {
   comparaveis_usados: number;
   criado_em: string;
   status: 'novo' | 'em_atendimento' | 'atendido';
+  estudo_mercado_status?: 'gerando' | 'pronto' | 'erro';
+  estudo_mercado_relatorio_id?: string;
 }
 
 interface ConfigAvaliacao {
@@ -70,6 +72,22 @@ export default function AvaliacaoAdminPage() {
       if (configJson.success) setConfig(configJson.data);
     }).finally(() => setCarregando(false));
   }, []);
+
+  // O estudo de mercado automático (disparado assim que o lead chega pela
+  // calculadora) roda em background no servidor — enquanto ele não termina,
+  // o lead fica com estudo_mercado_status: 'gerando'. Repolir a cada 5s só
+  // enquanto isso for verdade evita ter que recarregar a página manualmente
+  // pra ver o resultado aparecer.
+  useEffect(() => {
+    const temPendente = leads.some(l => l.estudo_mercado_status === 'gerando');
+    if (!temPendente) return;
+    const t = setInterval(() => {
+      fetch('/api/leads-avaliacao').then(r => r.json()).then(json => {
+        if (json.success) setLeads(json.data);
+      });
+    }, 5000);
+    return () => clearInterval(t);
+  }, [leads]);
 
   const atualizarStatus = async (id: string, status: string) => {
     setLeads(prev => prev.map(l => l.id === id ? { ...l, status: status as LeadAvaliacao['status'] } : l));
@@ -300,26 +318,48 @@ export default function AvaliacaoAdminPage() {
                         </div>
                       </td>
                       <td style={{ fontSize: '0.78rem' }}>
-                        {estudoStatus[lead.id] === 'carregando' ? (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-muted)' }}>
-                            <Loader2 size={12} className={styles.spin} /> Gerando...
-                          </span>
-                        ) : estudoStatus[lead.id] === 'pronto' && estudoRelatorioId[lead.id] ? (
-                          <Link
-                            href={`/relatorios?id=${estudoRelatorioId[lead.id]}`}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#22c55e', fontWeight: 600, textDecoration: 'none' }}
-                          >
-                            <FileText size={12} /> Ver relatório
-                          </Link>
-                        ) : (
-                          <button
-                            onClick={() => pedirEstudoMercado(lead)}
-                            className="btn btn-secondary"
-                            style={{ fontSize: '0.72rem', gap: 5, padding: '0.35rem 0.6rem' }}
-                          >
-                            <Sparkles size={12} /> Pedir à Lisa
-                          </button>
-                        )}
+                        {(() => {
+                          // Estado local (clique manual/retentativa) tem prioridade;
+                          // senão usa o que já veio pronto do lead (gerado
+                          // automaticamente no servidor quando o lead chegou).
+                          const statusLocal = estudoStatus[lead.id];
+                          const relatorioIdLocal = estudoRelatorioId[lead.id];
+                          const status = statusLocal === 'carregando' ? 'carregando'
+                            : statusLocal === 'pronto' ? 'pronto'
+                            : lead.estudo_mercado_status === 'gerando' ? 'carregando'
+                            : lead.estudo_mercado_status === 'pronto' ? 'pronto'
+                            : lead.estudo_mercado_status === 'erro' || statusLocal === 'erro' ? 'erro'
+                            : 'nenhum';
+                          const relatorioId = relatorioIdLocal || lead.estudo_mercado_relatorio_id;
+
+                          if (status === 'carregando') {
+                            return (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--text-muted)' }}>
+                                <Loader2 size={12} className={styles.spin} /> Gerando...
+                              </span>
+                            );
+                          }
+                          if (status === 'pronto' && relatorioId) {
+                            return (
+                              <Link
+                                href={`/relatorios?id=${relatorioId}`}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#22c55e', fontWeight: 600, textDecoration: 'none' }}
+                              >
+                                <FileText size={12} /> Ver relatório
+                              </Link>
+                            );
+                          }
+                          return (
+                            <button
+                              onClick={() => pedirEstudoMercado(lead)}
+                              className="btn btn-secondary"
+                              style={{ fontSize: '0.72rem', gap: 5, padding: '0.35rem 0.6rem' }}
+                              title={status === 'erro' ? 'Não foi possível gerar automaticamente — tentar de novo' : undefined}
+                            >
+                              <Sparkles size={12} /> {status === 'erro' ? 'Tentar de novo' : 'Pedir à Lisa'}
+                            </button>
+                          );
+                        })()}
                       </td>
                       <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                         {new Date(lead.criado_em).toLocaleString('pt-BR')}

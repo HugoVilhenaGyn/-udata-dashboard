@@ -36,6 +36,7 @@ const SECOES = [
   { rota: '/destaques', nome: 'Gestão de Destaques', descricao: 'Fila de recomendação de destaques pagos por portal e histórico de decisões' },
   { rota: '/xml', nome: 'Motor de XML', descricao: 'Processamento e enriquecimento do feed XML' },
   { rota: '/avaliacao-admin', nome: 'Avaliação Online', descricao: 'Leads capturados pela calculadora pública de avaliação e configuração da landing' },
+  { rota: '/estudo-mercado', nome: 'Estudo de Mercado', descricao: 'Seleciona qualquer imóvel da carteira e gera um estudo de mercado/precificação real com comparáveis' },
   { rota: '/relatorios', nome: 'Relatórios', descricao: 'Relatórios estruturados gerados pela Lisa, salvos pra conferência posterior' },
   { rota: '/configuracoes/lisa', nome: 'Configurações · Lisa', descricao: 'Instruções personalizadas e pesquisas de mercado (RAG) usadas pela Lisa — dentro de Configurações' },
 ];
@@ -377,36 +378,33 @@ function executarProporAtualizarStatusLead(args: any, db: DbSchema) {
   };
 }
 
-export async function POST(req: NextRequest) {
+// Núcleo da Lisa (contexto + loop de function calling do Gemini), separado
+// do handler HTTP pra poder ser chamado internamente por outras rotas —
+// hoje usado por POST /api/leads-avaliacao pra gerar o estudo de mercado
+// automático assim que um lead chega pela calculadora pública, sem
+// precisar de uma requisição HTTP de um endpoint pro outro.
+export async function processarMensagemLisa(params: {
+  mensagem: string;
+  historico?: { role: 'user' | 'model'; texto: string }[];
+  contextoTela?: { secao: string; detalhe?: string };
+  autor?: string;
+}): Promise<
+  | { success: true; data: { resposta: string; rota_sugerida: string | null; rota_label: string | null; relatorio: RelatorioLisa | null; proposta_acao: any } }
+  | { success: false; message: string; status?: number }
+> {
+  const { mensagem, historico, contextoTela } = params;
+  const autor = params.autor || 'Lisa (usuário não identificado)';
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return { success: false, message: 'GEMINI_API_KEY não configurada no servidor.', status: 500 };
+  }
+
+  if (!mensagem || !mensagem.trim()) {
+    return { success: false, message: 'Mensagem vazia.', status: 400 };
+  }
+
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { success: false, message: 'GEMINI_API_KEY não configurada no servidor.' },
-        { status: 500 }
-      );
-    }
-
-    const body = await req.json();
-    const { mensagem, historico, contextoTela } = body as {
-      mensagem: string;
-      historico?: { role: 'user' | 'model'; texto: string }[];
-      // Contexto automático da tela onde o widget flutuante da Lisa foi
-      // aberto (ver src/lib/lisa-context.tsx e src/components/lisa/LisaWidget.tsx)
-      // — opcional, só vem quando a pergunta parte do widget global, não do
-      // chat completo em /copiloto.
-      contextoTela?: { secao: string; detalhe?: string };
-    };
-
-    if (!mensagem || !mensagem.trim()) {
-      return NextResponse.json({ success: false, message: 'Mensagem vazia.' }, { status: 400 });
-    }
-
-    const cookieStore = await cookies();
-    const token = cookieStore.get('udata_session')?.value;
-    const session = token ? await verifySessionToken(token) : null;
-    const autor = session?.nome || session?.email || 'Lisa (usuário não identificado)';
-
     const db = await readDb();
     const contexto = montarContexto(db);
     const instrucoesTreinamento = db.configOrquestrador?.instrucoes?.trim();
@@ -476,10 +474,7 @@ Regras:
 
       if (!geminiRes.ok) {
         const errText = await geminiRes.text();
-        return NextResponse.json(
-          { success: false, message: `Erro na API do Gemini: ${geminiRes.status} ${errText.slice(0, 300)}` },
-          { status: 502 }
-        );
+        return { success: false, message: `Erro na API do Gemini: ${geminiRes.status} ${errText.slice(0, 300)}`, status: 502 };
       }
 
       const geminiJson = await geminiRes.json();
@@ -585,7 +580,7 @@ Regras:
       finalText = 'Não consegui concluir essa análise agora (muitos passos necessários). Tenta reformular a pergunta de um jeito mais direto.';
     }
 
-    return NextResponse.json({
+    return {
       success: true,
       data: {
         resposta: finalText,
@@ -594,7 +589,36 @@ Regras:
         relatorio: relatorioGerado,
         proposta_acao: propostaAcao,
       },
-    });
+    };
+  } catch (error: any) {
+    return { success: false, message: error.message, status: 500 };
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { mensagem, historico, contextoTela } = body as {
+      mensagem: string;
+      historico?: { role: 'user' | 'model'; texto: string }[];
+      contextoTela?: { secao: string; detalhe?: string };
+    };
+
+    const cookieStore = await cookies();
+    const token = cookieStore.get('udata_session')?.value;
+    const session = token ? await verifySessionToken(token) : null;
+    const autor = session?.nome || session?.email || 'Lisa (usuário não identificado)';
+
+    const resultado = await processarMensagemLisa({ mensagem, historico, contextoTela, autor });
+
+    if (!resultado.success) {
+      return NextResponse.json(
+        { success: false, message: resultado.message },
+        { status: resultado.status || 500 }
+      );
+    }
+
+    return NextResponse.json(resultado);
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }

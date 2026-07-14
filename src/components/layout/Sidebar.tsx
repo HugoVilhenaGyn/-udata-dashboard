@@ -17,6 +17,7 @@ import {
   Brain,
   Calculator,
   ClipboardList,
+  LineChart,
 } from 'lucide-react';
 import { ROLE_PERMISSIONS } from '@/lib/permissions';
 import styles from './Sidebar.module.css';
@@ -32,6 +33,7 @@ const navItems = [
   { href: '/destaques', label: 'Gestão de Destaques', icon: Zap },
   { href: '/xml', label: 'Motor de XML', icon: FileCode2 },
   { href: '/avaliacao-admin', label: 'Avaliação Online', icon: Calculator },
+  { href: '/estudo-mercado', label: 'Estudo de Mercado', icon: LineChart },
 ];
 
 export default function Sidebar({

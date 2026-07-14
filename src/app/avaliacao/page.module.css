@@ -28,16 +28,21 @@
   margin-bottom: 1.5rem;
 }
 
-.brandIcon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: rgba(99,102,241,0.15);
-  border: 1px solid rgba(99,102,241,0.3);
+.brandLogo {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #818cf8;
+  padding: 0.4rem 0.75rem;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid rgba(255,255,255,0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.brandLogo img {
+  display: block;
+  width: auto;
+  height: 36px;
 }
 
 .heroTitle {

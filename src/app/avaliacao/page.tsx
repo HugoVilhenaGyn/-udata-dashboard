@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import Image from 'next/image';
 import { mockImoveis, mockImobiliaria, avaliarImovel, formatCurrency, ResultadoAvaliacao } from '@/lib/mock-data';
 import { ImovelFinalidade, ImovelTipo } from '@/lib/types';
 import {
-  Home, Building2, TrendingUp, CheckCircle2, Phone, Mail, User, MessageSquare, ArrowRight, Loader2,
+  Building2, TrendingUp, CheckCircle2, Phone, Mail, User, MessageSquare, ArrowRight, Loader2,
 } from 'lucide-react';
+import loboLogo from '@/assets/lobo-logo.jpg';
 import styles from './page.module.css';
 
 interface ConfigAvaliacao {
@@ -115,8 +117,9 @@ export default function AvaliacaoPage() {
       <div className={styles.hero}>
         <div className={styles.heroInner}>
           <div className={styles.brand}>
-            <div className={styles.brandIcon}><Home size={18} /></div>
-            <span>{mockImobiliaria.nome}</span>
+            <div className={styles.brandLogo}>
+              <Image src={loboLogo} alt={mockImobiliaria.nome} height={36} priority />
+            </div>
           </div>
           <h1 className={styles.heroTitle}>{config.tituloHero}</h1>
           <p className={styles.heroSubtitle}>{config.mensagemHero}</p>

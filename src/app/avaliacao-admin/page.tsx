@@ -7,6 +7,7 @@ import {
   Users, Clock, CheckCircle2, TrendingUp, Save, ExternalLink, Loader2,
 } from 'lucide-react';
 import styles from './page.module.css';
+import { useLisaScreenContext } from '@/lib/lisa-context';
 
 interface LeadAvaliacao {
   id: string;
@@ -104,6 +105,8 @@ export default function AvaliacaoAdminPage() {
   const emAtendimento = leads.filter(l => l.status === 'em_atendimento').length;
   const atendidos = leads.filter(l => l.status === 'atendido').length;
   const taxaAtendimento = total > 0 ? Math.round((atendidos / total) * 100) : 0;
+
+  useLisaScreenContext({ secao: 'Avaliação Online (admin)' });
 
   return (
     <>

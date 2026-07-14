@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import { FileText, ClipboardList } from 'lucide-react';
 import styles from './page.module.css';
+import { useLisaScreenContext } from '@/lib/lisa-context';
 
 interface RelatorioSecao {
   titulo: string;
@@ -66,6 +67,8 @@ function RelatoriosPageContent() {
   }, []);
 
   const selecionado = relatorios.find(r => r.id === selecionadoId) || null;
+
+  useLisaScreenContext({ secao: 'Relatórios', detalhe: selecionadoId ? `Relatório aberto: ${selecionadoId}` : undefined });
 
   return (
     <>

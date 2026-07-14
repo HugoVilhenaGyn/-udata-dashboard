@@ -16,6 +16,7 @@ import {
   Building2, TrendingUp, Star, FileCode2, Zap, AlertCircle, CheckCircle2, Clock, KeyRound, Handshake, Eye, Users,
 } from 'lucide-react';
 import styles from './page.module.css';
+import { useLisaScreenContext } from '@/lib/lisa-context';
 
 const PERIOD_OPTIONS = mockLeadsMensal.map(m => ({ value: m.mes, label: `${m.label}` }));
 
@@ -66,6 +67,8 @@ export default function HomePage() {
     );
     return new Set([...idsPremiumXml, ...idsAppCriados]).size;
   }, [destaquesAtivosApi]);
+
+  useLisaScreenContext({ secao: 'Visão Geral' });
 
   return (
     <>

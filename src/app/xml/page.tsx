@@ -12,6 +12,7 @@ import {
   FileCode, Play, CheckCircle2, AlertCircle, Wand2, Download, Copy, RefreshCw, Check, Upload, Link2, Info, Settings, Zap, Clock, ExternalLink,
 } from 'lucide-react';
 import styles from './page.module.css';
+import { useLisaScreenContext } from '@/lib/lisa-context';
 
 interface Alteracao {
   imovelId: string;
@@ -533,6 +534,8 @@ export default function XmlPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  useLisaScreenContext({ secao: 'Motor de XML & Enriquecimento' });
 
   return (
     <>

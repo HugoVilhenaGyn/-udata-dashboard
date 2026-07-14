@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
+import { LisaContextProvider } from '@/lib/lisa-context';
+import LisaWidget from '@/components/lisa/LisaWidget';
 
 const SIDEBAR_COLLAPSED_KEY = 'udata_sidebar_collapsed';
 
@@ -38,15 +40,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  // O widget flutuante da Lisa (botão + painel de chat) fica disponível em
+  // toda seção logada do painel — exceto na própria /copiloto, que já é o
+  // chat completo (duplicar ali só atrapalharia).
+  const mostrarWidgetLisa = pathname !== '/copiloto';
+
   return (
-    <div
-      className="page-wrapper"
-      style={{ '--sidebar-width': collapsed ? '76px' : '260px' } as React.CSSProperties}
-    >
-      <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
-      <main className="main-content">
-        {children}
-      </main>
-    </div>
+    <LisaContextProvider>
+      <div
+        className="page-wrapper"
+        style={{ '--sidebar-width': collapsed ? '76px' : '260px' } as React.CSSProperties}
+      >
+        <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
+        <main className="main-content">
+          {children}
+        </main>
+        {mostrarWidgetLisa && <LisaWidget />}
+      </div>
+    </LisaContextProvider>
   );
 }

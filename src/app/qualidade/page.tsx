@@ -12,6 +12,7 @@ import {
   DollarSign, FileText, Image, Video, Tag, Ruler,
 } from 'lucide-react';
 import styles from './page.module.css';
+import { useLisaScreenContext } from '@/lib/lisa-context';
 
 const criterioIcons: Record<string, any> = {
   endereco: MapPin, preco: DollarSign, descricao: FileText,
@@ -104,6 +105,8 @@ export default function QualidadePage() {
   const average = imoveis.filter(i => i.nota_qualidade >= 5 && i.nota_qualidade < 7).length;
   const poor = imoveis.filter(i => i.nota_qualidade < 5).length;
   const total = imoveis.length;
+
+  useLisaScreenContext({ secao: 'Qualidade de Anúncios', detalhe: expanded ? `Imóvel expandido: ${codigoImovel(expanded)}` : (search ? `Busca: "${search}"` : undefined) });
 
   return (
     <>

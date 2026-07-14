@@ -9,6 +9,7 @@ import {
 import { FarolStatus } from '@/lib/types';
 import { TrendingUp, DollarSign, Home, KeyRound, Building2, AlertTriangle, Handshake } from 'lucide-react';
 import styles from './page.module.css';
+import { useLisaScreenContext } from '@/lib/lisa-context';
 
 const farolLabels: Record<FarolStatus, string> = {
   venda_iminente: 'Alta liquidez',
@@ -58,6 +59,8 @@ function FarolBreakdown({ segmentos, comissaoPct, recorrente }: {
 export default function ReceitaPage() {
   const totalPontualLocacao = receitaResumo.comissaoInferidaIntermediacaoLocacao;
   const totalPontual = receitaResumo.comissaoInferidaVenda + totalPontualLocacao;
+
+  useLisaScreenContext({ secao: 'Dashboard de Receita' });
 
   return (
     <>

@@ -11,6 +11,7 @@ import {
   Search, SlidersHorizontal, Download, Eye, Users, Calendar, ChevronUp, ChevronDown, Star, AlertTriangle,
 } from 'lucide-react';
 import styles from './page.module.css';
+import { useLisaScreenContext } from '@/lib/lisa-context';
 
 type SortField = 'nota_qualidade' | 'preco_atual' | 'dias_no_mercado' | 'leads_semana';
 type SortDir = 'asc' | 'desc';
@@ -108,6 +109,8 @@ ${imoveis.map(i => `    <Listing>
     if (sortField !== field) return <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>↕</span>;
     return sortDir === 'desc' ? <ChevronDown size={12} color="#6366f1" /> : <ChevronUp size={12} color="#6366f1" />;
   }
+
+  useLisaScreenContext({ secao: 'Inventário', detalhe: search ? `Busca: "${search}"` : undefined });
 
   return (
     <>

@@ -8,6 +8,7 @@ import { mockPortais, mockDestaques, mockImoveis, mockFilaRecomendacaoDestaque, 
 import { Destaque, Portal, Imovel, PortalSlug } from '@/lib/types';
 import { Zap, TrendingUp, DollarSign, Eye, Users, Calendar, Target, Plus, Cpu, Sparkles, ShieldAlert } from 'lucide-react';
 import styles from './page.module.css';
+import { useLisaScreenContext } from '@/lib/lisa-context';
 
 const portalColors: Record<string, string> = {
   olx: '#6a1faf', zap: '#ff5a00', vivareal: '#0066cc',
@@ -277,6 +278,8 @@ export default function DestaquesPage() {
       setTimeout(() => setAviso(null), 4000);
     }, 1000);
   };
+
+  useLisaScreenContext({ secao: 'Gestão de Destaques' });
 
   return (
     <>

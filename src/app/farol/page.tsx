@@ -11,6 +11,7 @@ import {
   Lightbulb, TrendingUp, Clock, TrendingDown, Filter, Eye, Users, ArrowUpRight, ChevronRight,
 } from 'lucide-react';
 import styles from './page.module.css';
+import { useLisaScreenContext } from '@/lib/lisa-context';
 
 // Venda e locação usam o mesmo indicador de liquidez, mas com rótulos e
 // descrições diferentes — "Venda Iminente" não faz sentido para um imóvel
@@ -98,6 +99,8 @@ export default function FarolPage() {
       return true;
     });
   }, [escopo, selectedStatus, search, tipoFilter]);
+
+  useLisaScreenContext({ secao: 'Farol de Oportunidade', detalhe: `Filtro de status: ${selectedStatus === 'all' ? 'todos' : selectedStatus}${search ? `, busca: "${search}"` : ''}` });
 
   return (
     <>

@@ -388,9 +388,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { mensagem, historico } = body as {
+    const { mensagem, historico, contextoTela } = body as {
       mensagem: string;
       historico?: { role: 'user' | 'model'; texto: string }[];
+      // Contexto automático da tela onde o widget flutuante da Lisa foi
+      // aberto (ver src/lib/lisa-context.tsx e src/components/lisa/LisaWidget.tsx)
+      // — opcional, só vem quando a pergunta parte do widget global, não do
+      // chat completo em /copiloto.
+      contextoTela?: { secao: string; detalhe?: string };
     };
 
     if (!mensagem || !mensagem.trim()) {
@@ -425,6 +430,7 @@ ${JSON.stringify(contexto, null, 2)}
 
 SEÇÕES DISPONÍVEIS NO PAINEL:
 ${SECOES.map(s => `- ${s.rota} — ${s.nome}: ${s.descricao}`).join('\n')}
+${contextoTela ? `\nCONTEXTO DA TELA ATUAL (o usuário está vendo isso agora, pode responder sem pedir pra ele reexplicar onde está ou o que aparece na tela):\nSeção: ${contextoTela.secao}${contextoTela.detalhe ? `\nDetalhe: ${contextoTela.detalhe}` : ''}\n` : ''}
 ${instrucoesTreinamento ? `\nINSTRUÇÕES PERSONALIZADAS DA EQUIPE (seguir sempre, têm prioridade sobre o estilo padrão abaixo):\n${instrucoesTreinamento}\n` : ''}
 ${blocoDocumentos ? `\nPESQUISAS DE MERCADO ENVIADAS PELA EQUIPE (dados externos reais — use como referência de mercado além do portfólio, citando o documento de origem):\n${blocoDocumentos}\n` : ''}
 FERRAMENTAS DISPONÍVEIS E QUANDO USAR:

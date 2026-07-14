@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header';
 import { formatCurrency } from '@/lib/mock-data';
 import {
   Users, Clock, CheckCircle2, TrendingUp, Save, ExternalLink, Loader2, Sparkles, FileText,
+  Download, Link2, Check,
 } from 'lucide-react';
 import styles from './page.module.css';
 import { useLisaScreenContext } from '@/lib/lisa-context';
@@ -62,6 +63,15 @@ export default function AvaliacaoAdminPage() {
   // salvo em Relatórios, não é só uma resposta que some.
   const [estudoStatus, setEstudoStatus] = useState<Record<string, 'carregando' | 'pronto' | 'erro'>>({});
   const [estudoRelatorioId, setEstudoRelatorioId] = useState<Record<string, string>>({});
+  const [linkCopiadoId, setLinkCopiadoId] = useState<string | null>(null);
+
+  const copiarLinkPublico = (relatorioId: string) => {
+    const url = `${window.location.origin}/api/relatorios-publico/${relatorioId}/pdf`;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopiadoId(relatorioId);
+      setTimeout(() => setLinkCopiadoId(null), 2500);
+    });
+  };
 
   useEffect(() => {
     Promise.all([
@@ -341,12 +351,30 @@ export default function AvaliacaoAdminPage() {
                           }
                           if (status === 'pronto' && relatorioId) {
                             return (
-                              <Link
-                                href={`/relatorios?id=${relatorioId}`}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#22c55e', fontWeight: 600, textDecoration: 'none' }}
-                              >
-                                <FileText size={12} /> Ver relatório
-                              </Link>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                <Link
+                                  href={`/relatorios?id=${relatorioId}`}
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#22c55e', fontWeight: 600, textDecoration: 'none' }}
+                                >
+                                  <FileText size={12} /> Ver relatório
+                                </Link>
+                                <a
+                                  href={`/api/relatorios/${relatorioId}/pdf`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="Baixar PDF com a identidade visual da Lobo Imóveis"
+                                  style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--text-muted)' }}
+                                >
+                                  <Download size={13} />
+                                </a>
+                                <button
+                                  onClick={() => copiarLinkPublico(relatorioId)}
+                                  title="Copiar link do PDF pra mandar direto pro lead"
+                                  style={{ display: 'inline-flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', color: linkCopiadoId === relatorioId ? '#22c55e' : 'var(--text-muted)' }}
+                                >
+                                  {linkCopiadoId === relatorioId ? <Check size={13} /> : <Link2 size={13} />}
+                                </button>
+                              </div>
                             );
                           }
                           return (

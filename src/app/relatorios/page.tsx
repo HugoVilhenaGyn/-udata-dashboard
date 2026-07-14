@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/layout/Header';
-import { FileText, ClipboardList } from 'lucide-react';
+import { FileText, ClipboardList, Download, Link2, Check } from 'lucide-react';
 import styles from './page.module.css';
 import { useLisaScreenContext } from '@/lib/lisa-context';
 
@@ -50,6 +50,15 @@ function RelatoriosPageContent() {
   const [relatorios, setRelatorios] = useState<RelatorioLisa[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [selecionadoId, setSelecionadoId] = useState<string | null>(idNaUrl);
+  const [linkCopiadoId, setLinkCopiadoId] = useState<string | null>(null);
+
+  const copiarLinkPublico = (id: string) => {
+    const url = `${window.location.origin}/api/relatorios-publico/${id}/pdf`;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopiadoId(id);
+      setTimeout(() => setLinkCopiadoId(null), 2500);
+    });
+  };
 
   useEffect(() => {
     fetch('/api/relatorios')
@@ -120,7 +129,30 @@ function RelatoriosPageContent() {
                         {' · pergunta original: '}&quot;{selecionado.pergunta_origem}&quot;
                       </div>
                     </div>
-                    <span className={styles.tipoBadge}>{TIPO_LABEL[selecionado.tipo]}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      <span className={styles.tipoBadge}>{TIPO_LABEL[selecionado.tipo]}</span>
+                      <a
+                        href={`/api/relatorios/${selecionado.id}/pdf`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.72rem', gap: 5, padding: '0.35rem 0.6rem' }}
+                        title="Baixar PDF com a identidade visual da Lobo Imóveis"
+                      >
+                        <Download size={12} /> Baixar PDF
+                      </a>
+                      {selecionado.tipo === 'precificacao' && (
+                        <button
+                          onClick={() => copiarLinkPublico(selecionado.id)}
+                          className="btn btn-secondary"
+                          style={{ fontSize: '0.72rem', gap: 5, padding: '0.35rem 0.6rem' }}
+                          title="Copiar link do PDF pra mandar direto pro proprietário (sem precisar logar)"
+                        >
+                          {linkCopiadoId === selecionado.id ? <Check size={12} /> : <Link2 size={12} />}
+                          {linkCopiadoId === selecionado.id ? 'Link copiado!' : 'Link pro proprietário'}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className={styles.resumoBox}>

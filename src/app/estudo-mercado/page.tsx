@@ -6,7 +6,7 @@ import Header from '@/components/layout/Header';
 import { formatCurrency, codigoImovel } from '@/lib/mock-data';
 import { useImoveis } from '@/lib/use-imoveis';
 import { Imovel } from '@/lib/types';
-import { Search, Sparkles, FileText, Loader2 } from 'lucide-react';
+import { Search, Sparkles, FileText, Loader2, Download, Link2, Check } from 'lucide-react';
 import { useLisaScreenContext } from '@/lib/lisa-context';
 import styles from './page.module.css';
 
@@ -32,6 +32,15 @@ export default function EstudoMercadoPage() {
   const [historico, setHistorico] = useState<RelatorioResumo[]>([]);
   const [carregandoHistorico, setCarregandoHistorico] = useState(true);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [linkCopiadoId, setLinkCopiadoId] = useState<string | null>(null);
+
+  const copiarLinkPublico = (relatorioId: string) => {
+    const url = `${window.location.origin}/api/relatorios-publico/${relatorioId}/pdf`;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopiadoId(relatorioId);
+      setTimeout(() => setLinkCopiadoId(null), 2500);
+    });
+  };
 
   useLisaScreenContext({ secao: 'Estudo de Mercado' });
 
@@ -147,12 +156,30 @@ export default function EstudoMercadoPage() {
                           <Loader2 size={12} className={styles.spin} /> Gerando...
                         </span>
                       ) : st === 'pronto' && relatorioId ? (
-                        <Link
-                          href={`/relatorios?id=${relatorioId}`}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#22c55e', fontWeight: 600, textDecoration: 'none' }}
-                        >
-                          <FileText size={12} /> Ver relatório
-                        </Link>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <Link
+                            href={`/relatorios?id=${relatorioId}`}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#22c55e', fontWeight: 600, textDecoration: 'none' }}
+                          >
+                            <FileText size={12} /> Ver relatório
+                          </Link>
+                          <a
+                            href={`/api/relatorios/${relatorioId}/pdf`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Baixar PDF com a identidade visual da Lobo Imóveis"
+                            style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--text-muted)' }}
+                          >
+                            <Download size={13} />
+                          </a>
+                          <button
+                            onClick={() => copiarLinkPublico(relatorioId)}
+                            title="Copiar link do PDF pra mandar direto pro proprietário"
+                            style={{ display: 'inline-flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', color: linkCopiadoId === relatorioId ? '#22c55e' : 'var(--text-muted)' }}
+                          >
+                            {linkCopiadoId === relatorioId ? <Check size={13} /> : <Link2 size={13} />}
+                          </button>
+                        </div>
                       ) : (
                         <button
                           onClick={() => gerarEstudo(imovel)}

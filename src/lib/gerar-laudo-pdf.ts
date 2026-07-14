@@ -3,8 +3,8 @@ import fs from 'fs';
 import path from 'path';
 import { RelatorioLisa } from './db';
 
-// Gerador do PDF de "Laudo/Estudo de Mercado" com a identidade visual real
-// da Lobo Imóveis — layout, cores e tom seguem o modelo de laudo de
+// Gerador do PDF do Informativo do Imóvel (precificação + diagnóstico) com
+// a identidade visual real da Lobo Imóveis — layout, cores e tom seguem o modelo de laudo de
 // avaliação mercadológica que a imobiliária já usa (logo, título em navy,
 // subtítulo em dourado, tabelas com cabeçalho navy, aviso legal ao final).
 // Isso transforma o relatório estruturado que a Lisa já gera (título,
@@ -21,7 +21,7 @@ const BOTTOM_LIMIT = 770;
 const LOGO_PATH = path.join(process.cwd(), 'src', 'assets', 'lobo-logo.jpg');
 
 const AVISO_LEGAL =
-  'Estudo de mercado orientativo gerado automaticamente pela Lisa (Inteligência Artificial da Lobo Imóveis), com base em dados reais do portfólio próprio (comparáveis ativos, leads e visualizações) e/ou pesquisas de mercado cadastradas pela equipe. Não constitui laudo técnico de engenharia de avaliação (ABNT NBR 14.653/IBAPE-GO). Para financiamento bancário, inventário, partilha ou ação judicial, recomenda-se a contratação de um engenheiro avaliador credenciado. Valores de mercado podem variar conforme condições de negociação, sazonalidade e características específicas do imóvel.';
+  'Informativo gerado automaticamente pela Lisa (Inteligência Artificial da Lobo Imóveis), com base em dados reais do portfólio próprio (comparáveis ativos, leads e visualizações) e/ou pesquisas de mercado cadastradas pela equipe. Não é um estudo de mercado formal com pesquisa externa independente, nem constitui laudo técnico de engenharia de avaliação (ABNT NBR 14.653/IBAPE-GO). Para financiamento bancário, inventário, partilha ou ação judicial, recomenda-se a contratação de um engenheiro avaliador credenciado. Valores podem variar conforme condições de negociação, sazonalidade e características específicas do imóvel.';
 
 const FOOTER_LINE =
   'Rua. 84, 572 - St. Sul, Goiânia - GO, 74080-400   ·   Telefone: (62) 3018-2500   ·   www.loboimoveis.imb.br';

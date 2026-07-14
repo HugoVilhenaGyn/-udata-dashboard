@@ -13,16 +13,16 @@
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
   ADMIN: [
     '/', '/copiloto', '/relatorios', '/farol', '/inventario', '/qualidade',
-    '/receita', '/destaques', '/xml', '/avaliacao-admin', '/estudo-mercado',
+    '/receita', '/destaques', '/xml', '/avaliacao-admin', '/informativo-imovel',
     '/configuracoes', '/configuracoes/geral', '/configuracoes/lisa',
     '/orquestrador-treinamento', // rota antiga — só existe pra redirecionar pra /configuracoes/lisa
   ],
   MARKETING: [
     '/', '/copiloto', '/relatorios', '/farol', '/inventario', '/qualidade',
-    '/destaques', '/avaliacao-admin', '/estudo-mercado', '/configuracoes/geral',
+    '/destaques', '/avaliacao-admin', '/informativo-imovel', '/configuracoes/geral',
   ],
   CORRETOR: [
     '/', '/copiloto', '/relatorios', '/farol', '/inventario', '/qualidade',
-    '/estudo-mercado', '/configuracoes/geral',
+    '/informativo-imovel', '/configuracoes/geral',
   ],
 };

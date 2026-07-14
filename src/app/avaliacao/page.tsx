@@ -20,7 +20,7 @@ const CONFIG_FALLBACK: ConfigAvaliacao = {
   ativo: true,
   telefoneContato: '62 3018.2500',
   tituloHero: 'Quanto vale o seu imóvel?',
-  mensagemHero: 'Avaliação gratuita baseada em imóveis reais do nosso portfólio na sua região — preencha seus dados e o do imóvel para ver o resultado do estudo de mercado.',
+  mensagemHero: 'Avaliação gratuita baseada em imóveis reais do nosso portfólio na sua região — preencha seus dados e o do imóvel para ver o resultado do informativo do imóvel.',
   mensagemIndisponivel: 'A avaliação online está temporariamente indisponível. Fale direto com a gente pelo telefone abaixo.',
 };
 
@@ -204,7 +204,7 @@ export default function AvaliacaoPage() {
 
               <div className={styles.divider}>Seus dados de contato</div>
               <p className={styles.dividerNote}>
-                Precisamos disso pra liberar o resultado do estudo de mercado e um corretor poder te
+                Precisamos disso pra liberar o resultado do informativo do imóvel e um corretor poder te
                 explicar a avaliação com mais detalhe.
               </p>
 

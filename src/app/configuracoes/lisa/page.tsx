@@ -218,7 +218,7 @@ export default function ConfiguracoesLisaPage() {
             <div className={styles.sectionSub}>
               Suba arquivos com pesquisas de anúncios do Portal 62, Zap, DataZap ou outra fonte (ex: preços de imóveis
               concorrentes, anuários de mercado, guias de bairro, planilhas de captação/IAC). A Lisa usa esse conteúdo
-              como referência extra ao montar um estudo de mercado, junto com os dados reais do portfólio. Aceita
+              como referência extra ao montar o informativo do imóvel, junto com os dados reais do portfólio. Aceita
               .pdf, .xlsx, .xls, .txt, .csv e .md — PDFs escaneados (imagem, sem texto real) não têm o conteúdo
               extraído automaticamente, e planilhas Excel são convertidas aba por aba em tabelas de texto.
             </div>

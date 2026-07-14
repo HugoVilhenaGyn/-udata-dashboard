@@ -33,7 +33,7 @@ const navItems = [
   { href: '/destaques', label: 'Gestão de Destaques', icon: Zap },
   { href: '/xml', label: 'Motor de XML', icon: FileCode2 },
   { href: '/avaliacao-admin', label: 'Avaliação Online', icon: Calculator },
-  { href: '/estudo-mercado', label: 'Estudo de Mercado', icon: LineChart },
+  { href: '/informativo-imovel', label: 'Informativo do Imóvel', icon: LineChart },
 ];
 
 export default function Sidebar({

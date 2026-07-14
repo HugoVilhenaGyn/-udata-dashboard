@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readDb } from '@/lib/db';
 import { gerarLaudoPdfBuffer } from '@/lib/gerar-laudo-pdf';
 
-// Versão pública (sem login) do PDF de um relatório de estudo de mercado —
+// Versão pública (sem login) do PDF de um informativo do imóvel —
 // pensada pra ser enviada direto pro WhatsApp/e-mail do proprietário, que
 // não tem acesso ao painel. Só serve relatórios do tipo "precificacao"
-// (estudo de mercado/avaliação) — os demais tipos (qualidade, destaques,
+// (precificação/avaliação) — os demais tipos (qualidade, destaques,
 // geral) são análises internas do portfólio e não devem ficar públicas. O
 // id do relatório é um identificador longo e aleatório (não sequencial),
 // então só quem tem o link recebido da equipe consegue acessar.

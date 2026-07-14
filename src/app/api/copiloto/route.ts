@@ -36,7 +36,7 @@ const SECOES = [
   { rota: '/destaques', nome: 'Gestão de Destaques', descricao: 'Fila de recomendação de destaques pagos por portal e histórico de decisões' },
   { rota: '/xml', nome: 'Motor de XML', descricao: 'Processamento e enriquecimento do feed XML' },
   { rota: '/avaliacao-admin', nome: 'Avaliação Online', descricao: 'Leads capturados pela calculadora pública de avaliação e configuração da landing' },
-  { rota: '/estudo-mercado', nome: 'Estudo de Mercado', descricao: 'Seleciona qualquer imóvel da carteira e gera um estudo de mercado/precificação real com comparáveis' },
+  { rota: '/informativo-imovel', nome: 'Informativo do Imóvel', descricao: 'Seleciona qualquer imóvel da carteira e gera um informativo de precificação (comparáveis do próprio portfólio) e diagnóstico de qualidade do anúncio' },
   { rota: '/relatorios', nome: 'Relatórios', descricao: 'Relatórios estruturados gerados pela Lisa, salvos pra conferência posterior' },
   { rota: '/configuracoes/lisa', nome: 'Configurações · Lisa', descricao: 'Instruções personalizadas e pesquisas de mercado (RAG) usadas pela Lisa — dentro de Configurações' },
 ];
@@ -210,7 +210,7 @@ function montarContexto(db: DbSchema) {
     if (!segmentos.has(chave)) segmentos.set(chave, []);
     segmentos.get(chave)!.push(i);
   }
-  const estudoMercado = Array.from(segmentos.values())
+  const comparaveisPortfolio = Array.from(segmentos.values())
     .filter(grupo => grupo.length >= 3)
     .map(grupo => {
       const precoM2Medio = grupo.reduce((acc, i) => acc + i.preco_atual / i.area_util, 0) / grupo.length;
@@ -246,7 +246,7 @@ function montarContexto(db: DbSchema) {
     lista_preco_fora_mercado_venda: listaComDesvio(precoForaMercadoVenda),
     lista_preco_fora_mercado_aluguel: listaComDesvio(precoForaMercadoAluguel),
     lista_alto_potencial_sem_destaque: lista(semDestaqueAltoPotencial),
-    estudo_mercado_por_segmento: estudoMercado,
+    comparaveis_portfolio_por_segmento: comparaveisPortfolio,
     lista_imoveis_completa: base.slice(0, 400).map(i => ({
       codigo: codigoImovel(i.id_externo),
       titulo: i.titulo.slice(0, 60),
@@ -441,7 +441,7 @@ Regras:
 - Responda sempre em português do Brasil, direto e objetivo, sem enrolação.
 - Baseie suas respostas SOMENTE nos dados fornecidos (contexto + resultado das ferramentas). Se não souber algo, diga isso claramente — nunca invente números.
 - Quando o usuário pedir uma lista, contagem ou análise de imóveis, responda com a lista completa e real usando os dados de "lista_*" — enumere cada item. NUNCA substitua a resposta por um redirecionamento genérico quando os dados já estão disponíveis.
-- Para estudo de mercado (oferta/demanda/precificação), use "estudo_mercado_por_segmento" (portfólio próprio, real) e os documentos de pesquisa enviados (mercado externo) — sempre deixando claro qual é a fonte de cada número.
+- Para precificação e diagnóstico do imóvel (oferta/demanda internas), use "comparaveis_portfolio_por_segmento" (dados reais do portfólio próprio) e os documentos de pesquisa enviados pela equipe (mercado externo, se houver) — deixe sempre claro que isso é um comparativo com o próprio portfólio, não uma pesquisa de mercado formal/externa, e cite a fonte de cada número.
 - Seja específico: cite códigos de imóveis reais, nunca fale em termos vagos tipo "vários imóveis".
 - Depois de usar uma ferramenta, sempre feche com uma resposta em texto explicando o resultado pro usuário — nunca deixe a última mensagem ser só a chamada da ferramenta.
 - Nunca use notação LaTeX ou matemática (tipo "$\\text{m}^2$" ou "\\frac{}{}"). Escreva direto em texto normal: "m²", "R$/m²", "28%". O chat não renderiza LaTeX, então isso aparece quebrado pro usuário.

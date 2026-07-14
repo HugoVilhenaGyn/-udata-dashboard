@@ -4,7 +4,7 @@ import { readDb, writeDb, DocumentoRag } from '@/lib/db';
 import { verifySessionToken } from '@/lib/auth-service';
 
 // Documentos de pesquisa de mercado (Portal 62, Zap, DataZap etc.) que a
-// equipe sobe pra Lisa usar como referência ao montar um estudo de mercado.
+// equipe sobe pra Lisa usar como referência ao montar o informativo do imóvel.
 // Três formatos de entrada aceitos:
 // - texto puro (.txt/.csv/.md): o navegador já manda o texto extraído
 //   (FileReader.readAsText), a gente só valida e corta um teto de tamanho.

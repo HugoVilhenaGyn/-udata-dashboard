@@ -18,13 +18,14 @@ interface RelatorioResumo {
 }
 
 // Marcador usado no título do relatório pra poder filtrar depois o
-// histórico de estudos pedidos por essa tela (ver gerarEstudo abaixo). Não
-// existe uma coluna dedicada pra isso no schema — o próprio texto do
-// título carrega o código do imóvel, mesmo padrão já usado nos relatórios
-// de lead ("Estudo de Mercado · Lead X").
-const PREFIXO_TITULO = 'Estudo de Mercado · Imóvel';
+// histórico de informativos pedidos por essa tela (ver gerarInformativo
+// abaixo). Não existe uma coluna dedicada pra isso no schema — o próprio
+// texto do título carrega o código do imóvel. Os informativos automáticos
+// de lead usam um prefixo diferente ("Informativo do Imóvel — Lead"), de
+// propósito, pra não aparecerem misturados nesse histórico por imóvel.
+const PREFIXO_TITULO = 'Informativo do Imóvel — Cód.';
 
-export default function EstudoMercadoPage() {
+export default function InformativoImovelPage() {
   const { imoveis } = useImoveis();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<Record<string, 'carregando' | 'pronto' | 'erro'>>({});
@@ -42,7 +43,7 @@ export default function EstudoMercadoPage() {
     });
   };
 
-  useLisaScreenContext({ secao: 'Estudo de Mercado' });
+  useLisaScreenContext({ secao: 'Informativo do Imóvel' });
 
   useEffect(() => {
     fetch('/api/relatorios').then(r => r.json()).then(json => {
@@ -64,19 +65,19 @@ export default function EstudoMercadoPage() {
     ).slice(0, 30);
   }, [imoveis, search]);
 
-  const gerarEstudo = async (imovel: Imovel) => {
+  const gerarInformativo = async (imovel: Imovel) => {
     setStatus(prev => ({ ...prev, [imovel.id]: 'carregando' }));
     try {
       const finalidadeTxt = imovel.finalidade === 'venda' ? 'venda' : 'locação';
       const codigo = codigoImovel(imovel.id_externo);
-      const mensagem = `Gere um relatório de estudo de mercado pro imóvel de código ${codigo} da nossa própria carteira — "${imovel.titulo}", no bairro "${imovel.bairro}", tipo "${imovel.tipo}", ${imovel.area_util}m²${imovel.quartos ? `, ${imovel.quartos} quartos` : ''}, atualmente anunciado por ${formatCurrency(imovel.preco_atual)} para ${finalidadeTxt}. Use estudo_mercado_por_segmento e comparáveis reais do portfólio nesse bairro/tipo/finalidade pra avaliar se o preço atual desse imóvel está alinhado, abaixo ou acima do mercado, cite a oferta e demanda reais (quantos comparáveis, leads e visualizações da semana nesse segmento) e feche com uma recomendação prática — manter, reduzir ou reforçar a divulgação. O título do relatório precisa começar exatamente com "${PREFIXO_TITULO} ${codigo}".`;
+      const mensagem = `Gere um informativo do imóvel de código ${codigo} da nossa própria carteira (precificação com base no próprio portfólio + diagnóstico de qualidade do anúncio, não uma pesquisa de mercado externa) — "${imovel.titulo}", no bairro "${imovel.bairro}", tipo "${imovel.tipo}", ${imovel.area_util}m²${imovel.quartos ? `, ${imovel.quartos} quartos` : ''}, atualmente anunciado por ${formatCurrency(imovel.preco_atual)} para ${finalidadeTxt}. Use comparaveis_portfolio_por_segmento e comparáveis reais do portfólio nesse bairro/tipo/finalidade pra avaliar se o preço atual desse imóvel está alinhado, abaixo ou acima do próprio portfólio, cite a oferta e demanda reais (quantos comparáveis, leads e visualizações da semana nesse segmento) e feche com uma recomendação prática — manter, reduzir ou reforçar a divulgação. O título do relatório precisa começar exatamente com "${PREFIXO_TITULO} ${codigo}".`;
 
       const res = await fetch('/api/copiloto', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mensagem,
-          contextoTela: { secao: 'Estudo de Mercado', detalhe: `Imóvel ${codigo} — ${imovel.titulo}` },
+          contextoTela: { secao: 'Informativo do Imóvel', detalhe: `Imóvel ${codigo} — ${imovel.titulo}` },
         }),
       });
       const json = await res.json();
@@ -96,7 +97,7 @@ export default function EstudoMercadoPage() {
       }
     } catch (err: any) {
       setStatus(prev => ({ ...prev, [imovel.id]: 'erro' }));
-      setAviso(`⚠️ ${err.message || 'Erro ao pedir o estudo de mercado à Lisa.'}`);
+      setAviso(`⚠️ ${err.message || 'Erro ao pedir o informativo à Lisa.'}`);
       setTimeout(() => setAviso(null), 5000);
     }
   };
@@ -104,8 +105,8 @@ export default function EstudoMercadoPage() {
   return (
     <>
       <Header
-        title="Estudo de Mercado"
-        subtitle="Selecione qualquer imóvel da carteira e peça à Lisa uma análise de precificação com comparáveis reais"
+        title="Informativo do Imóvel"
+        subtitle="Selecione qualquer imóvel da carteira e peça à Lisa um informativo de precificação (com base no próprio portfólio) e diagnóstico de qualidade do anúncio"
       />
 
       {aviso && <div className={styles.aviso}>{aviso}</div>}
@@ -129,7 +130,7 @@ export default function EstudoMercadoPage() {
                 <th>Imóvel</th>
                 <th>Bairro</th>
                 <th>Preço atual</th>
-                <th>Estudo de mercado (Lisa)</th>
+                <th>Informativo do Imóvel (Lisa)</th>
               </tr>
             </thead>
             <tbody>
@@ -182,11 +183,11 @@ export default function EstudoMercadoPage() {
                         </div>
                       ) : (
                         <button
-                          onClick={() => gerarEstudo(imovel)}
+                          onClick={() => gerarInformativo(imovel)}
                           className="btn btn-secondary"
                           style={{ fontSize: '0.72rem', gap: 5, padding: '0.35rem 0.6rem' }}
                         >
-                          <Sparkles size={12} /> {st === 'erro' ? 'Tentar de novo' : 'Gerar estudo'}
+                          <Sparkles size={12} /> {st === 'erro' ? 'Tentar de novo' : 'Gerar informativo'}
                         </button>
                       )}
                     </td>
@@ -206,7 +207,7 @@ export default function EstudoMercadoPage() {
       </div>
 
       <div className={styles.sectionHeader}>
-        <h2 className={styles.sectionTitle}>Estudos já pedidos</h2>
+        <h2 className={styles.sectionTitle}>Informativos já pedidos</h2>
       </div>
 
       <div className="card">
@@ -214,7 +215,7 @@ export default function EstudoMercadoPage() {
           <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>Carregando...</div>
         ) : historico.length === 0 ? (
           <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-            Nenhum estudo de mercado por imóvel pedido ainda.
+            Nenhum informativo de imóvel pedido ainda.
           </div>
         ) : (
           <div className={styles.historicoLista}>

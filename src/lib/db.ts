@@ -67,10 +67,11 @@ export interface LeadAvaliacao {
   comparaveis_usados: number;
   criado_em: string;
   status: 'novo' | 'em_atendimento' | 'atendido';
-  // Estudo de mercado automático gerado pela Lisa assim que o lead chega
-  // pela calculadora pública (ver POST /api/leads-avaliacao) — dispara em
-  // background, sem bloquear a resposta ao visitante. 'erro' também cobre
-  // leads antigos que nunca tiveram o campo populado.
+  // Informativo do imóvel (precificação + diagnóstico) automático gerado
+  // pela Lisa assim que o lead chega pela calculadora pública (ver POST
+  // /api/leads-avaliacao) — dispara em background, sem bloquear a resposta
+  // ao visitante. 'erro' também cobre leads antigos que nunca tiveram o
+  // campo populado.
   estudo_mercado_status?: 'gerando' | 'pronto' | 'erro';
   estudo_mercado_relatorio_id?: string;
 }
@@ -87,14 +88,15 @@ export const CONFIG_AVALIACAO_PADRAO: ConfigAvaliacao = {
   ativo: true,
   telefoneContato: '62 3018.2500',
   tituloHero: 'Quanto vale o seu imóvel?',
-  mensagemHero: 'Avaliação gratuita baseada em imóveis reais do nosso portfólio na sua região — preencha seus dados e o do imóvel para ver o resultado do estudo de mercado.',
+  mensagemHero: 'Avaliação gratuita baseada em imóveis reais do nosso portfólio na sua região — preencha seus dados e o do imóvel para ver o resultado do informativo do imóvel.',
   mensagemIndisponivel: 'A avaliação online está temporariamente indisponível. Fale direto com a gente pelo telefone abaixo.',
 };
 
 // Documento de pesquisa de mercado (RAG) enviado pela equipe — ex: prints/
 // exports de anúncios do Portal 62 e do Zap, pra Lisa cruzar com o
-// portfólio real na hora de montar um estudo de mercado. O texto extraído
-// do arquivo fica salvo aqui e é injetado (truncado) no prompt da Lisa.
+// portfólio real na hora de montar o informativo do imóvel. O texto
+// extraído do arquivo fica salvo aqui e é injetado (truncado) no prompt da
+// Lisa.
 export interface DocumentoRag {
   id: string;
   nome: string;

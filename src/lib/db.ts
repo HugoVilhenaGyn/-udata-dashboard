@@ -115,6 +115,48 @@ export const CONFIG_ORQUESTRADOR_PADRAO: ConfigOrquestrador = {
   documentos: [],
 };
 
+// Agendamento da sincronização diária com o Vista CRM (extração dos feeds
+// XML Loft e Zap). Cada "feed" tem seu próprio liga/desliga e lista de
+// horários (formato "HH:MM", 24h, horário de Brasília) — em geral faz
+// sentido rodar de madrugada e reforçar à tarde, mas isso fica configurável
+// aqui em vez de fixo no código. O processo scripts/sync-scheduler.mjs (um
+// 4º processo PM2, separado do Next.js) lê isso e dispara os scripts
+// scripts/sync-vista-*.mjs nos horários configurados.
+export interface ConfigSyncFeed {
+  habilitado: boolean;
+  horarios: string[];
+}
+
+export interface ConfigSync {
+  loft: ConfigSyncFeed;
+  zap: ConfigSyncFeed;
+}
+
+export const CONFIG_SYNC_PADRAO: ConfigSync = {
+  loft: { habilitado: false, horarios: ['06:00', '18:00'] },
+  zap: { habilitado: false, horarios: ['07:00'] },
+};
+
+// Histórico de execuções da sincronização (agendada ou disparada
+// manualmente pelo botão "Rodar agora" na tela Motor de XML). Substitui o
+// antigo sync-vista-log.json (um arquivo local, sobrescrito a cada rodada e
+// perdido em ambiente sem disco persistente) por um histórico real que
+// sobrevive entre execuções e entre os dois scripts (Loft/Zap não se
+// sobrescrevem mais um ao outro).
+export interface SyncLogEntry {
+  id: string;
+  feed: 'loft' | 'zap';
+  disparado_por: 'agendado' | 'manual';
+  executado_em: string;
+  status: 'sucesso' | 'erro';
+  duracao_ms?: number;
+  total_no_feed?: number;
+  total_alterados?: number;
+  novos_no_feed?: number;
+  removidos_do_feed?: number;
+  erro_mensagem?: string;
+}
+
 // Relatório estruturado que a Lisa gera sob demanda (ferramenta
 // "gerar_relatorio") — fica salvo pra revisão posterior, não é só uma
 // mensagem de chat que some quando a conversa rola. Cada seção pode ter
@@ -147,6 +189,8 @@ export interface DbSchema {
   configAvaliacao: ConfigAvaliacao;
   configOrquestrador: ConfigOrquestrador;
   relatoriosLisa: RelatorioLisa[];
+  configSync: ConfigSync;
+  syncLog: SyncLogEntry[];
 }
 
 const APP_STATE_ROW_ID = 1;
@@ -198,6 +242,8 @@ function buildInitialDb(): DbSchema {
     configAvaliacao: CONFIG_AVALIACAO_PADRAO,
     configOrquestrador: CONFIG_ORQUESTRADOR_PADRAO,
     relatoriosLisa: [],
+    configSync: CONFIG_SYNC_PADRAO,
+    syncLog: [],
   };
 }
 
@@ -209,6 +255,10 @@ function aplicarBackfill(data: DbSchema): DbSchema {
   if (!data.configOrquestrador) data.configOrquestrador = CONFIG_ORQUESTRADOR_PADRAO;
   if (!Array.isArray(data.configOrquestrador.documentos)) data.configOrquestrador.documentos = [];
   if (!Array.isArray(data.relatoriosLisa)) data.relatoriosLisa = [];
+  if (!data.configSync) data.configSync = CONFIG_SYNC_PADRAO;
+  if (!data.configSync.loft) data.configSync.loft = CONFIG_SYNC_PADRAO.loft;
+  if (!data.configSync.zap) data.configSync.zap = CONFIG_SYNC_PADRAO.zap;
+  if (!Array.isArray(data.syncLog)) data.syncLog = [];
   return data;
 }
 

@@ -25,7 +25,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { readDbPg, writeDbPg, fecharPool } from './lib/pg-db.mjs';
+import { readDbPg, writeDbPg, fecharPool, registrarSyncLog } from './lib/pg-db.mjs';
+import crypto from 'crypto';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FEED_URL = 'https://loboimov-portais.vistahost.com.br/47366e944b4a56df1713df75fda662da';
@@ -212,10 +213,38 @@ async function main() {
   if (naoEncontrados.length) console.log(`${naoEncontrados.length} códigos do feed não encontrados na base local:`, naoEncontrados.join(', '));
   for (const a of alterados) console.log(`  ${a.id_externo} — ${a.mudancas.join('; ')}`);
   console.log('\nRelatório salvo em', LOG_PATH);
+
+  await registrarSyncLog({
+    id: crypto.randomUUID(),
+    feed: 'zap',
+    disparado_por: process.env.SYNC_TRIGGER === 'manual' ? 'manual' : 'agendado',
+    executado_em: agora,
+    status: 'sucesso',
+    duracao_ms: Date.now() - inicioMs,
+    total_no_feed: feedImoveis.length,
+    total_alterados: alterados.length,
+  });
+
   await fecharPool();
 }
 
-main().catch(err => {
+const inicioMs = Date.now();
+
+main().catch(async err => {
   console.error('Erro na sincronização:', err.message);
+  try {
+    await registrarSyncLog({
+      id: crypto.randomUUID(),
+      feed: 'zap',
+      disparado_por: process.env.SYNC_TRIGGER === 'manual' ? 'manual' : 'agendado',
+      executado_em: new Date().toISOString(),
+      status: 'erro',
+      duracao_ms: Date.now() - inicioMs,
+      erro_mensagem: String(err.message || err).slice(0, 500),
+    });
+  } catch (logErr) {
+    console.error('Falha ao registrar erro no syncLog:', logErr.message);
+  }
+  await fecharPool();
   process.exit(1);
 });

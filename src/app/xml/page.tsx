@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
+import Link from 'next/link';
 import Header from '@/components/layout/Header';
 import {
   mockRegrasEnriquecimento,
@@ -8,7 +9,7 @@ import {
 } from '@/lib/mock-data';
 import { RegraEnriquecimento } from '@/lib/types';
 import {
-  FileCode, Play, CheckCircle2, AlertCircle, Wand2, Download, Copy, RefreshCw, Check, Upload, Link2, Info, Settings,
+  FileCode, Play, CheckCircle2, AlertCircle, Wand2, Download, Copy, RefreshCw, Check, Upload, Link2, Info, Settings, Zap, Clock, ExternalLink,
 } from 'lucide-react';
 import styles from './page.module.css';
 
@@ -18,6 +19,28 @@ interface Alteracao {
   antes: string;
   depois: string;
   ganho: number;
+}
+
+interface ConfigSyncFeed {
+  habilitado: boolean;
+  horarios: string[];
+}
+
+interface ConfigSync {
+  loft: ConfigSyncFeed;
+  zap: ConfigSyncFeed;
+}
+
+interface SyncLogEntry {
+  id: string;
+  feed: 'loft' | 'zap';
+  disparado_por: 'agendado' | 'manual';
+  executado_em: string;
+  status: 'sucesso' | 'erro';
+  duracao_ms?: number;
+  total_no_feed?: number;
+  total_alterados?: number;
+  erro_mensagem?: string;
 }
 
 export default function XmlPage() {
@@ -42,6 +65,60 @@ export default function XmlPage() {
   const portalPendenteRef = useRef<'grupo_olx' | 'portal62' | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ==========================================================
+  // PAINEL OPERACIONAL — sincronização real com o Vista CRM
+  // ==========================================================
+  // Diferente do simulador acima (roda só no navegador), este painel fala
+  // com o pipeline de verdade: agendamento configurado em Configurações >
+  // Sincronização, execução via scripts/sync-vista-*.mjs, e histórico
+  // persistido no Postgres (db.syncLog). Fica em Operações porque é aqui
+  // que a equipe já vem checar o estado dos feeds no dia a dia — "Rodar
+  // agora" é uma ação frequente, não uma configuração de setup único.
+  const [configSync, setConfigSync] = useState<ConfigSync | null>(null);
+  const [syncLogs, setSyncLogs] = useState<SyncLogEntry[]>([]);
+  const [carregandoSync, setCarregandoSync] = useState(true);
+  const [rodandoFeed, setRodandoFeed] = useState<'loft' | 'zap' | null>(null);
+  const [avisoSync, setAvisoSync] = useState<string | null>(null);
+
+  const carregarStatusSync = () => {
+    fetch('/api/config-sync')
+      .then(r => r.json())
+      .then(json => {
+        if (json.success) {
+          setConfigSync(json.data.config);
+          setSyncLogs(json.data.logs || []);
+        }
+      })
+      .finally(() => setCarregandoSync(false));
+  };
+
+  useEffect(() => {
+    carregarStatusSync();
+  }, []);
+
+  const rodarSyncAgora = async (feed: 'loft' | 'zap') => {
+    setRodandoFeed(feed);
+    setAvisoSync(null);
+    try {
+      const res = await fetch('/api/config-sync/rodar-agora', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feed }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || 'Sincronização terminou com erro — veja o histórico abaixo.');
+      setAvisoSync(`✅ Sincronização do feed ${feed === 'loft' ? 'Loft' : 'Zap'} concluída.`);
+      carregarStatusSync();
+    } catch (err: any) {
+      setAvisoSync(`⚠️ ${err.message || 'Erro ao rodar sincronização.'}`);
+    } finally {
+      setRodandoFeed(null);
+      setTimeout(() => setAvisoSync(null), 6000);
+    }
+  };
+
+  const ultimaExecucao = (feed: 'loft' | 'zap') => syncLogs.find(l => l.feed === feed) || null;
 
   const toggleRegra = (id: string) => {
     setRegras(prev =>
@@ -477,6 +554,87 @@ export default function XmlPage() {
               (Orquestrador IA, ao propor corrigir um anúncio) ou automaticamente na sincronização diária com o Vista CRM.
             </div>
           </div>
+        </div>
+
+        {/* PAINEL OPERACIONAL — sincronização real com o Vista CRM */}
+        <div className="card" style={{ marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '1rem' }}>
+            <div>
+              <h2 className={styles.cardTitle}>
+                <Zap size={15} style={{ marginRight: 6, verticalAlign: -2 }} />
+                Sincronização com o Vista CRM (real)
+              </h2>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.35rem', maxWidth: '40rem' }}>
+                Status e histórico do pipeline que atualiza o portfólio de verdade. Horários de execução automática
+                ficam em <Link href="/configuracoes/sincronizacao" style={{ color: 'var(--primary-hover)' }}>Configurações → Sincronização</Link>.
+              </p>
+            </div>
+            <Link href="/configuracoes/sincronizacao" className="btn btn-secondary" style={{ gap: 6, flexShrink: 0 }}>
+              Configurar horários <ExternalLink size={13} />
+            </Link>
+          </div>
+
+          {avisoSync && (
+            <div style={{ marginBottom: '1rem', padding: '0.65rem 0.9rem', borderRadius: 8, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', color: '#c7d2fe', fontSize: '0.8rem' }}>
+              {avisoSync}
+            </div>
+          )}
+
+          {carregandoSync ? (
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Carregando status...</div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              {(['loft', 'zap'] as const).map(feed => {
+                const ultima = ultimaExecucao(feed);
+                const cfg = configSync?.[feed];
+                return (
+                  <div key={feed} style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', borderRadius: 10, padding: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {feed === 'loft' ? 'Loft (feed completo)' : 'Zap / Grupo OLX'}
+                        </span>
+                        <span style={{
+                          fontSize: '0.65rem', fontWeight: 700, padding: '2px 7px', borderRadius: 999,
+                          background: cfg?.habilitado ? 'rgba(34,197,94,0.15)' : 'rgba(148,163,184,0.15)',
+                          color: cfg?.habilitado ? '#22c55e' : 'var(--text-muted)',
+                        }}>
+                          {cfg?.habilitado ? 'AGENDADO' : 'MANUAL'}
+                        </span>
+                      </div>
+                      <button
+                        className="btn btn-primary"
+                        style={{ gap: 6, padding: '0.4rem 0.75rem', fontSize: '0.75rem' }}
+                        disabled={rodandoFeed !== null}
+                        onClick={() => rodarSyncAgora(feed)}
+                      >
+                        {rodandoFeed === feed ? <RefreshCw size={13} className={styles.spin} /> : <Play size={13} />}
+                        {rodandoFeed === feed ? 'Rodando...' : 'Rodar agora'}
+                      </button>
+                    </div>
+                    {cfg && cfg.horarios.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                        <Clock size={11} /> {cfg.horarios.join(', ')}
+                      </div>
+                    )}
+                    {ultima ? (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        <span style={{ color: ultima.status === 'sucesso' ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
+                          {ultima.status === 'sucesso' ? '✓' : '✕'}
+                        </span>{' '}
+                        {new Date(ultima.executado_em).toLocaleString('pt-BR')} · {ultima.disparado_por === 'manual' ? 'manual' : 'agendado'}
+                        {ultima.status === 'sucesso'
+                          ? ` · ${ultima.total_alterados ?? 0} alterados de ${ultima.total_no_feed ?? '?'} no feed`
+                          : ` · ${ultima.erro_mensagem || 'erro'}`}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Nenhuma sincronização registrada ainda.</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* CONNECT / UPLOAD BAR */}

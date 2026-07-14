@@ -21,7 +21,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { readDbPg, writeDbPg, fecharPool } from './lib/pg-db.mjs';
+import { readDbPg, writeDbPg, fecharPool, registrarSyncLog } from './lib/pg-db.mjs';
+import crypto from 'crypto';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const LOG_PATH = path.join(__dirname, '..', 'src', 'data', 'sync-vista-log.json');
@@ -203,10 +204,40 @@ async function main() {
   for (const a of alterados.slice(0, 30)) console.log(`  ${a.id_externo} — ${a.mudancas.join('; ')}`);
   if (alterados.length > 30) console.log(`  ... e mais ${alterados.length - 30}`);
   console.log('\nRelatório completo salvo em', LOG_PATH);
+
+  await registrarSyncLog({
+    id: crypto.randomUUID(),
+    feed: 'loft',
+    disparado_por: process.env.SYNC_TRIGGER === 'manual' ? 'manual' : 'agendado',
+    executado_em: agora,
+    status: 'sucesso',
+    duracao_ms: Date.now() - inicioMs,
+    total_no_feed: feedImoveis.length,
+    total_alterados: alterados.length,
+    novos_no_feed: novosNoFeed.length,
+    removidos_do_feed: removidosDoFeed.length,
+  });
+
   await fecharPool();
 }
 
-main().catch(err => {
+const inicioMs = Date.now();
+
+main().catch(async err => {
   console.error('Erro na sincronização:', err.message);
+  try {
+    await registrarSyncLog({
+      id: crypto.randomUUID(),
+      feed: 'loft',
+      disparado_por: process.env.SYNC_TRIGGER === 'manual' ? 'manual' : 'agendado',
+      executado_em: new Date().toISOString(),
+      status: 'erro',
+      duracao_ms: Date.now() - inicioMs,
+      erro_mensagem: String(err.message || err).slice(0, 500),
+    });
+  } catch (logErr) {
+    console.error('Falha ao registrar erro no syncLog:', logErr.message);
+  }
+  await fecharPool();
   process.exit(1);
 });

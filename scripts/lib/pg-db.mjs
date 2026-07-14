@@ -64,3 +64,18 @@ export async function fecharPool() {
     pool = null;
   }
 }
+
+// Anexa uma entrada ao histórico de sincronização (db.syncLog) — usado
+// pelos scripts sync-vista-*.mjs pra registrar cada execução (agendada ou
+// manual) sem depender de um arquivo local sobrescrito a cada rodada.
+// Faz um read-modify-write simples (mesmo padrão do resto do app, sem
+// transação/lock) — em uso normal (uma sync por vez) não há concorrência
+// real aqui.
+export async function registrarSyncLog(entry) {
+  const db = await readDbPg();
+  if (!Array.isArray(db.syncLog)) db.syncLog = [];
+  db.syncLog.unshift(entry);
+  if (db.syncLog.length > 200) db.syncLog.length = 200;
+  await writeDbPg(db);
+}
+

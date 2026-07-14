@@ -127,7 +127,7 @@ const TOOLS = [
       {
         name: 'propor_atualizar_preco',
         description:
-          'PROPÕE um novo preço (venda ou aluguel) para um imóvel específico — NÃO executa sozinha, apenas cria uma proposta que o usuário confirma com um clique; se confirmada, o preço é gravado de verdade no imóvel (fica no histórico de preço dele). Use sempre que, numa conversa sobre precificação, você chegar a um valor concreto recomendado (não apenas discutir a média do bairro em abstrato) — não fique só descrevendo o número no texto, proponha a mudança de fato.',
+          'PROPÕE um novo preço (venda ou aluguel) para um imóvel específico — NÃO executa sozinha, apenas cria uma proposta que o usuário confirma com um clique; se confirmada, o preço é gravado de verdade no imóvel (fica no histórico de preço dele). Use sempre que, numa conversa sobre precificação, você chegar a um valor concreto recomendado (não apenas discutir a média do bairro em abstrato) — não fique só descrevendo o número no texto, proponha a mudança de fato. ATENÇÃO: preco_novo NUNCA pode ser simplesmente o preco_sugerido_ia bruto do imóvel copiado sem ajuste — esse número é só um ponto de partida estatístico (baseado na média do segmento), não a recomendação final. Antes de propor, aplique o mesmo raciocínio de bairro nobre/condição do imóvel que você usa no texto (nota de qualidade, se é novo/bem apresentado, diferenciais, desvio-padrão do segmento) — o preco_novo proposto deve refletir esse ajuste, não o valor cru da ferramenta pontuar_imovel.',
         parameters: {
           type: 'OBJECT',
           properties: {

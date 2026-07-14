@@ -72,6 +72,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (!imovel.descricao_enriquecida) {
         imovel.descricao_enriquecida = imovel.descricao;
       }
+      // Marca que esse imóvel teve os critérios corrigidos manualmente —
+      // protege contra o próximo sync do Vista sobrescrever isso (ver
+      // comentário do campo em src/lib/types.ts e a checagem nos scripts
+      // scripts/sync-vista-*.mjs).
+      imovel.enriquecido_manualmente_em = new Date().toISOString();
       imovel.data_atualizacao = new Date().toISOString();
       db.imoveis[idx] = imovel;
       await writeDb(db);

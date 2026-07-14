@@ -178,9 +178,18 @@ async function main() {
     }
 
     if (mudancas.length > 0) {
-      const { criterios, nota } = recalcularCriterios(existente, f);
-      existente.criterios_qualidade = criterios;
-      existente.nota_qualidade = nota;
+      // Se um humano (ou a Lisa, a pedido de um humano) já corrigiu os
+      // critérios de qualidade deste imóvel manualmente, não recalculamos
+      // por cima — só os dados brutos acima (preço, área etc.) são
+      // atualizados. Sem essa checagem, o sync seguinte reverteria
+      // silenciosamente o enriquecimento manual.
+      if (existente.enriquecido_manualmente_em) {
+        mudancas.push('nota de qualidade preservada (enriquecida manualmente em ' + existente.enriquecido_manualmente_em + ')');
+      } else {
+        const { criterios, nota } = recalcularCriterios(existente, f);
+        existente.criterios_qualidade = criterios;
+        existente.nota_qualidade = nota;
+      }
       existente.data_atualizacao = agora.split('T')[0];
       alterados.push({ id_externo: f.id_externo, titulo: existente.titulo, mudancas });
     }

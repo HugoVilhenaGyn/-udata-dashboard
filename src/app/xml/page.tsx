@@ -462,6 +462,23 @@ export default function XmlPage() {
       <Header title="Motor de XML &amp; Enriquecimento" subtitle="Processamento automático e higienização de feeds" />
       <div className="page-body animate-fadeIn">
 
+        {/* Esta tela é uma demonstração do motor de regras — roda inteiramente
+            no navegador e NÃO grava no banco. O enriquecimento que persiste de
+            verdade acontece via Lisa (Orquestrador IA → propor_enriquecer_anuncio)
+            ou nos scripts de sincronização diária do Vista. Aviso explícito pra
+            não confundir os dois fluxos. */}
+        <div className="card" style={{ marginBottom: '1.5rem', borderColor: 'rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.06)' }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+            <span style={{ fontSize: '1rem' }}>⚠️</span>
+            <div>
+              <strong style={{ color: 'var(--text-primary)' }}>Isso é uma simulação do motor de regras.</strong> O
+              XML processado aqui roda só no seu navegador e não grava no portfólio real — use "Copiar" ou "Baixar"
+              pra levar o resultado pra onde precisar. O enriquecimento que fica salvo de verdade acontece pela Lisa
+              (Orquestrador IA, ao propor corrigir um anúncio) ou automaticamente na sincronização diária com o Vista CRM.
+            </div>
+          </div>
+        </div>
+
         {/* CONNECT / UPLOAD BAR */}
         <div className="card" style={{ marginBottom: '1.5rem' }}>
           <h2 className={styles.cardTitle}>Conectar Canal de Origem (XML Feed)</h2>

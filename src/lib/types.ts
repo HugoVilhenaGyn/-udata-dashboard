@@ -72,6 +72,13 @@ export interface Imovel {
   // PREMIUM, etc.) — é a fonte real do destaque_ativo. Guardado para
   // rastreabilidade/transparência de onde veio a classificação.
   publication_type?: string;
+  // ISO timestamp de quando um humano (ou a Lisa, a pedido de um humano)
+  // corrigiu manualmente os critérios de qualidade deste imóvel. Enquanto
+  // esse campo estiver preenchido, os scripts de sync do Vista NÃO
+  // recalculam criterios_qualidade/nota_qualidade automaticamente — só
+  // atualizam os dados brutos (preço, área, etc.). Evita que um sync
+  // diário reverta silenciosamente um enriquecimento manual.
+  enriquecido_manualmente_em?: string;
 }
 
 export interface HistoricoPreco {

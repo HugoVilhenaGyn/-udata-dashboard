@@ -10,6 +10,76 @@
   flex-direction: column;
   z-index: 100;
   overflow: hidden;
+  transition: width 0.2s ease;
+}
+
+/* Botão de recolher/expandir */
+.collapseToggle {
+  position: absolute;
+  top: 1.35rem;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 101;
+  padding: 0;
+  transition: all var(--transition-fast);
+}
+
+.collapseToggle:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+/* Estado recolhido: sidebar vira uma faixa estreita só com ícones */
+.sidebarCollapsed .logo {
+  justify-content: center;
+  padding: 1.25rem 0 1rem;
+}
+
+.sidebarCollapsed .logoTextWrap {
+  display: none;
+}
+
+.sidebarCollapsed .navSectionLabel {
+  display: none;
+}
+
+.sidebarCollapsed .navItem {
+  justify-content: center;
+  padding: 0.55rem;
+}
+
+.sidebarCollapsed .navLabel {
+  display: none;
+}
+
+.sidebarCollapsed .navChevron {
+  display: none;
+}
+
+.sidebarCollapsed .settingsLink {
+  justify-content: center;
+}
+
+.sidebarCollapsed .settingsLabel {
+  display: none;
+}
+
+.sidebarCollapsed .planBadge {
+  justify-content: center;
+}
+
+.sidebarCollapsed .planLabel {
+  display: none;
 }
 
 /* Logo */

@@ -504,6 +504,7 @@ img {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: margin-left 0.2s ease;
 }
 
 .page-body {

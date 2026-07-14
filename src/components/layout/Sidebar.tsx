@@ -13,6 +13,7 @@ import {
   Settings,
   Zap,
   ChevronRight,
+  ChevronLeft,
   Brain,
   Calculator,
   ClipboardList,
@@ -33,7 +34,13 @@ const navItems = [
   { href: '/avaliacao-admin', label: 'Avaliação Online', icon: Calculator },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({
+  collapsed = false,
+  onToggleCollapsed,
+}: {
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
+}) {
   const pathname = usePathname();
   const [cargo, setCargo] = useState<string | null>(null);
 
@@ -55,7 +62,20 @@ export default function Sidebar() {
   const operacoes = itensVisiveis.filter(i => !principal.includes(i) && !analise.includes(i));
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ''}`}>
+      {/* Botão de recolher/expandir menu */}
+      {onToggleCollapsed && (
+        <button
+          type="button"
+          className={styles.collapseToggle}
+          onClick={onToggleCollapsed}
+          title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+          aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
+        >
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
+      )}
+
       {/* Logo */}
       <div className={styles.logo}>
         <div className={styles.logoIcon}>
@@ -65,7 +85,7 @@ export default function Sidebar() {
             <path d="M2 12l10 5 10-5" stroke="#818cf8" strokeWidth="2" strokeLinecap="round"/>
           </svg>
         </div>
-        <div>
+        <div className={styles.logoTextWrap}>
           <span className={styles.logoText}>BrokerImobAI</span>
           <span className={styles.logoSub}>Inteligência Imobiliária</span>
         </div>
@@ -77,7 +97,7 @@ export default function Sidebar() {
           <div className={styles.navSection}>
             <span className={styles.navSectionLabel}>Principal</span>
             {principal.map(({ href, label, icon: Icon }) => (
-              <NavItem key={href} href={href} label={label} icon={Icon} active={pathname === href} />
+              <NavItem key={href} href={href} label={label} icon={Icon} active={pathname === href} collapsed={collapsed} />
             ))}
           </div>
         )}
@@ -86,7 +106,7 @@ export default function Sidebar() {
           <div className={styles.navSection}>
             <span className={styles.navSectionLabel}>Análise</span>
             {analise.map(({ href, label, icon: Icon }) => (
-              <NavItem key={href} href={href} label={label} icon={Icon} active={pathname === href} />
+              <NavItem key={href} href={href} label={label} icon={Icon} active={pathname === href} collapsed={collapsed} />
             ))}
           </div>
         )}
@@ -95,7 +115,7 @@ export default function Sidebar() {
           <div className={styles.navSection}>
             <span className={styles.navSectionLabel}>Operações</span>
             {operacoes.map(({ href, label, icon: Icon }) => (
-              <NavItem key={href} href={href} label={label} icon={Icon} active={pathname === href} />
+              <NavItem key={href} href={href} label={label} icon={Icon} active={pathname === href} collapsed={collapsed} />
             ))}
           </div>
         )}
@@ -103,13 +123,13 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className={styles.sidebarFooter}>
-        <Link href="/configuracoes/geral" className={styles.settingsLink}>
+        <Link href="/configuracoes/geral" className={styles.settingsLink} title="Configurações">
           <Settings size={16} />
-          <span>Configurações</span>
+          <span className={styles.settingsLabel}>Configurações</span>
         </Link>
         <div className={styles.planBadge}>
           <div className={styles.planDot} />
-          <span>Enterprise</span>
+          <span className={styles.planLabel}>Enterprise</span>
         </div>
       </div>
     </aside>
@@ -117,10 +137,14 @@ export default function Sidebar() {
 }
 
 function NavItem({
-  href, label, icon: Icon, active,
-}: { href: string; label: string; icon: any; active: boolean }) {
+  href, label, icon: Icon, active, collapsed,
+}: { href: string; label: string; icon: any; active: boolean; collapsed: boolean }) {
   return (
-    <Link href={href} className={`${styles.navItem} ${active ? styles.navItemActive : ''}`}>
+    <Link
+      href={href}
+      className={`${styles.navItem} ${active ? styles.navItemActive : ''}`}
+      title={collapsed ? label : undefined}
+    >
       <Icon size={18} className={styles.navIcon} />
       <span className={styles.navLabel}>{label}</span>
       {active && <ChevronRight size={14} className={styles.navChevron} />}

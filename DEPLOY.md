@@ -139,6 +139,13 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
+        # A Lisa (Orquestrador IA) às vezes encadeia mais de uma chamada ao
+        # Gemini (function calling) numa mesma resposta e pode passar dos
+        # 60s padrão do Nginx — sem isso o Nginx devolve sua própria página
+        # de erro HTML no meio da resposta JSON ("Unexpected token '<'").
+        proxy_read_timeout 180s;
+        proxy_send_timeout 180s;
+        proxy_connect_timeout 180s;
     }
 }
 ```

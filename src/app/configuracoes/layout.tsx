@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Header from '@/components/layout/Header';
-import { Settings2, Brain, RefreshCw } from 'lucide-react';
+import { Settings2, Brain, RefreshCw, Users } from 'lucide-react';
 import styles from './layout.module.css';
 
 interface SessionInfo {
@@ -30,6 +30,7 @@ export default function ConfiguracoesLayout({ children }: { children: React.Reac
     { href: '/configuracoes/geral', label: 'Geral', icon: Settings2, visivel: true },
     { href: '/configuracoes/lisa', label: 'Lisa', icon: Brain, visivel: cargo === 'ADMIN' },
     { href: '/configuracoes/sincronizacao', label: 'Sincronização', icon: RefreshCw, visivel: cargo === 'ADMIN' },
+    { href: '/configuracoes/usuarios', label: 'Usuários', icon: Users, visivel: cargo === 'ADMIN' },
   ];
 
   return (

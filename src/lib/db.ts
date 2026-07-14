@@ -48,6 +48,11 @@ export interface User {
   cargo: 'ADMIN' | 'CORRETOR' | 'MARKETING';
   imobiliariaId: string;
   imobiliariaNome: string;
+  // Usuário desativado não consegue mais logar (ver /api/auth/login), mas
+  // continua no histórico — evita perder rastreabilidade de quem criou o
+  // quê. Backfill em aplicarBackfill() trata usuários antigos (sempre true).
+  ativo: boolean;
+  criado_em?: string;
 }
 
 export interface LeadAvaliacao {
@@ -219,6 +224,7 @@ function buildInitialDb(): DbSchema {
       cargo: 'ADMIN',
       imobiliariaId: 'imob-001',
       imobiliariaNome: 'LOBO IMOVEIS',
+      ativo: true,
     },
     {
       id: 'usr-comercial',
@@ -228,6 +234,7 @@ function buildInitialDb(): DbSchema {
       cargo: 'CORRETOR',
       imobiliariaId: 'imob-001',
       imobiliariaNome: 'LOBO IMOVEIS',
+      ativo: true,
     },
     {
       id: 'usr-marketing',
@@ -237,6 +244,7 @@ function buildInitialDb(): DbSchema {
       cargo: 'MARKETING',
       imobiliariaId: 'imob-001',
       imobiliariaNome: 'LOBO IMOVEIS',
+      ativo: true,
     },
   ];
 
@@ -267,6 +275,9 @@ function aplicarBackfill(data: DbSchema): DbSchema {
   if (!data.configSync.loft) data.configSync.loft = CONFIG_SYNC_PADRAO.loft;
   if (!data.configSync.zap) data.configSync.zap = CONFIG_SYNC_PADRAO.zap;
   if (!Array.isArray(data.syncLog)) data.syncLog = [];
+  if (Array.isArray(data.users)) {
+    data.users = data.users.map(u => ({ ...u, ativo: u.ativo === undefined ? true : u.ativo }));
+  }
   return data;
 }
 

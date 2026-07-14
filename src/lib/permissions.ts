@@ -15,6 +15,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     '/', '/copiloto', '/relatorios', '/farol', '/inventario', '/qualidade',
     '/receita', '/destaques', '/xml', '/avaliacao-admin', '/informativo-imovel',
     '/configuracoes', '/configuracoes/geral', '/configuracoes/lisa',
+    '/configuracoes/sincronizacao', '/configuracoes/usuarios',
     '/orquestrador-treinamento', // rota antiga — só existe pra redirecionar pra /configuracoes/lisa
   ],
   MARKETING: [

@@ -68,6 +68,13 @@ export async function POST(req: Request) {
       );
     }
 
+    if (user.ativo === false) {
+      return NextResponse.json(
+        { success: false, message: 'Este usuário está desativado. Fale com um administrador.' },
+        { status: 403 }
+      );
+    }
+
     // Login certo: zera o contador de falhas dessa origem e desse email,
     // pra não penalizar quem só errou a senha algumas vezes antes de acertar.
     limparTentativas(`ip:${ip}`);

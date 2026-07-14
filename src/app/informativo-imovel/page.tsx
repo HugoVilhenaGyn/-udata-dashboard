@@ -21,8 +21,8 @@ interface RelatorioResumo {
 // histórico de informativos pedidos por essa tela (ver gerarInformativo
 // abaixo). Não existe uma coluna dedicada pra isso no schema — o próprio
 // texto do título carrega o código do imóvel. Os informativos automáticos
-// de lead usam um prefixo diferente ("Informativo do Imóvel — Lead"), de
-// propósito, pra não aparecerem misturados nesse histórico por imóvel.
+// de lead são chamados de "Estudo de Mercado" (nome diferente, de
+// propósito, pra não aparecerem misturados nesse histórico por imóvel).
 const PREFIXO_TITULO = 'Informativo do Imóvel — Cód.';
 
 export default function InformativoImovelPage() {

@@ -35,7 +35,7 @@ const SECOES = [
   { rota: '/receita', nome: 'Dashboard de Receita', descricao: 'Receita projetada e inferida de comissões de venda e locação' },
   { rota: '/destaques', nome: 'Gestão de Destaques', descricao: 'Fila de recomendação de destaques pagos por portal e histórico de decisões' },
   { rota: '/xml', nome: 'Motor de XML', descricao: 'Processamento e enriquecimento do feed XML' },
-  { rota: '/avaliacao-admin', nome: 'Avaliação Online', descricao: 'Leads capturados pela calculadora pública de avaliação e configuração da landing' },
+  { rota: '/avaliacao-admin', nome: 'Calculadora Online', descricao: 'Leads capturados pela calculadora pública de avaliação (estudo de mercado automático por lead) e configuração da landing' },
   { rota: '/informativo-imovel', nome: 'Informativo do Imóvel', descricao: 'Seleciona qualquer imóvel da carteira e gera um informativo de precificação (comparáveis do próprio portfólio) e diagnóstico de qualidade do anúncio' },
   { rota: '/relatorios', nome: 'Relatórios', descricao: 'Relatórios estruturados gerados pela Lisa, salvos pra conferência posterior' },
   { rota: '/configuracoes/lisa', nome: 'Configurações · Lisa', descricao: 'Instruções personalizadas e pesquisas de mercado (RAG) usadas pela Lisa — dentro de Configurações' },

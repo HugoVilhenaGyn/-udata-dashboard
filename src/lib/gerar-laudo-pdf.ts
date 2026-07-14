@@ -20,8 +20,25 @@ const BOTTOM_LIMIT = 770;
 
 const LOGO_PATH = path.join(process.cwd(), 'src', 'assets', 'lobo-logo.jpg');
 
-const AVISO_LEGAL =
-  'Informativo gerado automaticamente pela Lisa (Inteligência Artificial da Lobo Imóveis), com base em dados reais do portfólio próprio (comparáveis ativos, leads e visualizações) e/ou pesquisas de mercado cadastradas pela equipe. Não é um estudo de mercado formal com pesquisa externa independente, nem constitui laudo técnico de engenharia de avaliação (ABNT NBR 14.653/IBAPE-GO). Para financiamento bancário, inventário, partilha ou ação judicial, recomenda-se a contratação de um engenheiro avaliador credenciado. Valores podem variar conforme condições de negociação, sazonalidade e características específicas do imóvel.';
+// O aviso legal muda de tom conforme o tipo de relatório: os informativos
+// por imóvel (carteira própria) deixam claro que NÃO são uma pesquisa de
+// mercado externa formal — só comparação com o próprio portfólio. Já os
+// relatórios da Calculadora Online (lead) são chamados de "Estudo de
+// Mercado" de propósito (nome pedido pelo usuário) e usam dados reais do
+// portfólio próprio e, quando disponíveis, pesquisas de mercado externas
+// cadastradas pela equipe — por isso o aviso não nega que seja um estudo
+// de mercado, só deixa claro que não substitui um laudo técnico.
+const AVISO_LEGAL_INFORMATIVO_IMOVEL =
+  'Informativo gerado automaticamente pela Lisa (Inteligência Artificial da Lobo Imóveis), com base em dados reais do portfólio próprio (comparáveis ativos, leads e visualizações). Não é um estudo de mercado formal com pesquisa externa independente, nem constitui laudo técnico de engenharia de avaliação (ABNT NBR 14.653/IBAPE-GO). Para financiamento bancário, inventário, partilha ou ação judicial, recomenda-se a contratação de um engenheiro avaliador credenciado. Valores podem variar conforme condições de negociação, sazonalidade e características específicas do imóvel.';
+
+const AVISO_LEGAL_ESTUDO_MERCADO =
+  'Estudo de mercado gerado automaticamente pela Lisa (Inteligência Artificial da Lobo Imóveis), com base em dados reais do portfólio próprio (comparáveis ativos, leads e visualizações) e, quando disponíveis, pesquisas de mercado externas cadastradas pela equipe. Não constitui laudo técnico de engenharia de avaliação (ABNT NBR 14.653/IBAPE-GO). Para financiamento bancário, inventário, partilha ou ação judicial, recomenda-se a contratação de um engenheiro avaliador credenciado. Valores podem variar conforme condições de negociação, sazonalidade e características específicas do imóvel.';
+
+function avisoLegalPara(titulo: string): string {
+  return titulo.trim().toLowerCase().startsWith('estudo de mercado')
+    ? AVISO_LEGAL_ESTUDO_MERCADO
+    : AVISO_LEGAL_INFORMATIVO_IMOVEL;
+}
 
 const FOOTER_LINE =
   'Rua. 84, 572 - St. Sul, Goiânia - GO, 74080-400   ·   Telefone: (62) 3018-2500   ·   www.loboimoveis.imb.br';
@@ -147,7 +164,7 @@ export function gerarLaudoPdfBuffer(relatorio: RelatorioLisa, contexto?: Context
 
       sectionHeading('AVISO LEGAL');
       doc.fontSize(8).fillColor(GRAY).font('Helvetica-Oblique')
-        .text(AVISO_LEGAL, MARGIN, doc.y, { width: CONTENT_W, align: 'justify' });
+        .text(avisoLegalPara(relatorio.titulo), MARGIN, doc.y, { width: CONTENT_W, align: 'justify' });
 
       // ---- Rodapé em todas as páginas ----
       const range = doc.bufferedPageRange();

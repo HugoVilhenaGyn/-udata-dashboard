@@ -56,12 +56,11 @@ export default function AvaliacaoAdminPage() {
   const [config, setConfig] = useState<ConfigAvaliacao | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
-  // Informativo do imóvel (precificação + diagnóstico) sob demanda, gerado
-  // pela Lisa (Orquestrador IA) pra embasar a conversa do corretor com o
-  // lead — reaproveita a mesma API do chat (/api/copiloto) e a ferramenta
-  // gerar_relatorio que ela já tem, só que com uma pergunta pronta
-  // descrevendo os dados do lead. Fica salvo em Relatórios, não é só uma
-  // resposta que some.
+  // Estudo de mercado sob demanda, gerado pela Lisa (Orquestrador IA) pra
+  // embasar a conversa do corretor com o lead — reaproveita a mesma API do
+  // chat (/api/copiloto) e a ferramenta gerar_relatorio que ela já tem,
+  // só que com uma pergunta pronta descrevendo os dados do lead. Fica
+  // salvo em Relatórios, não é só uma resposta que some.
   const [estudoStatus, setEstudoStatus] = useState<Record<string, 'carregando' | 'pronto' | 'erro'>>({});
   const [estudoRelatorioId, setEstudoRelatorioId] = useState<Record<string, string>>({});
   const [linkCopiadoId, setLinkCopiadoId] = useState<string | null>(null);
@@ -84,7 +83,7 @@ export default function AvaliacaoAdminPage() {
     }).finally(() => setCarregando(false));
   }, []);
 
-  // O informativo automático (disparado assim que o lead chega pela
+  // O estudo de mercado automático (disparado assim que o lead chega pela
   // calculadora) roda em background no servidor — enquanto ele não termina,
   // o lead fica com estudo_mercado_status: 'gerando'. Repolir a cada 5s só
   // enquanto isso for verdade evita ter que recarregar a página manualmente
@@ -116,18 +115,18 @@ export default function AvaliacaoAdminPage() {
     }
   };
 
-  const pedirInformativo = async (lead: LeadAvaliacao) => {
+  const pedirEstudoMercado = async (lead: LeadAvaliacao) => {
     setEstudoStatus(prev => ({ ...prev, [lead.id]: 'carregando' }));
     try {
       const finalidadeTxt = lead.finalidade === 'venda' ? 'venda' : 'locação';
-      const mensagem = `Gere um informativo do imóvel (precificação com base no próprio portfólio + diagnóstico de qualidade do anúncio, não uma pesquisa de mercado externa) para embasar o atendimento do lead "${lead.nome}", que pediu uma avaliação de ${finalidadeTxt} de um imóvel do tipo "${lead.tipo}" no bairro "${lead.bairro}", com aproximadamente ${lead.area_util}m²${lead.quartos ? ` e ${lead.quartos} quartos` : ''}. Use comparaveis_portfolio_por_segmento e comparáveis reais do portfólio nesse bairro/tipo/finalidade pra justificar uma faixa de valor de referência, cite a oferta e demanda reais (quantos comparáveis, leads e visualizações da semana nesse segmento) e feche com uma recomendação prática de precificação pro corretor levar pra conversa com esse cliente. O título do relatório precisa começar exatamente com "Informativo do Imóvel — Lead".`;
+      const mensagem = `Gere um relatório de estudo de mercado para embasar o atendimento do lead "${lead.nome}", que pediu uma avaliação de ${finalidadeTxt} de um imóvel do tipo "${lead.tipo}" no bairro "${lead.bairro}", com aproximadamente ${lead.area_util}m²${lead.quartos ? ` e ${lead.quartos} quartos` : ''}. Use comparaveis_portfolio_por_segmento e comparáveis reais do portfólio nesse bairro/tipo/finalidade pra justificar uma faixa de valor de referência, cite a oferta e demanda reais (quantos comparáveis, leads e visualizações da semana nesse segmento) e feche com uma recomendação prática de precificação pro corretor levar pra conversa com esse cliente. O título do relatório precisa começar exatamente com "Estudo de Mercado — Lead".`;
 
       const res = await fetch('/api/copiloto', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mensagem,
-          contextoTela: { secao: 'Avaliação Online (admin)', detalhe: `Lead: ${lead.nome} — ${finalidadeTxt} de ${lead.tipo} em ${lead.bairro}` },
+          contextoTela: { secao: 'Calculadora Online (admin)', detalhe: `Lead: ${lead.nome} — ${finalidadeTxt} de ${lead.tipo} em ${lead.bairro}` },
         }),
       });
       const json = await res.json();
@@ -145,7 +144,7 @@ export default function AvaliacaoAdminPage() {
       }
     } catch (err: any) {
       setEstudoStatus(prev => ({ ...prev, [lead.id]: 'erro' }));
-      setAviso(`⚠️ ${err.message || 'Erro ao pedir o informativo à Lisa.'}`);
+      setAviso(`⚠️ ${err.message || 'Erro ao pedir o estudo de mercado à Lisa.'}`);
       setTimeout(() => setAviso(null), 5000);
     }
   };
@@ -177,11 +176,11 @@ export default function AvaliacaoAdminPage() {
   const atendidos = leads.filter(l => l.status === 'atendido').length;
   const taxaAtendimento = total > 0 ? Math.round((atendidos / total) * 100) : 0;
 
-  useLisaScreenContext({ secao: 'Avaliação Online (admin)' });
+  useLisaScreenContext({ secao: 'Calculadora Online (admin)' });
 
   return (
     <>
-      <Header title="Avaliação Online" subtitle="Configuração da landing page pública e leads capturados pela calculadora" />
+      <Header title="Calculadora Online" subtitle="Configuração da landing page pública e leads capturados pela calculadora" />
       <div className="page-body animate-fadeIn">
 
         <div style={{ marginBottom: '1.25rem' }}>
@@ -305,7 +304,7 @@ export default function AvaliacaoAdminPage() {
                     <th>Contato</th>
                     <th>Imóvel</th>
                     <th>Avaliação</th>
-                    <th>Informativo do Imóvel (Lisa)</th>
+                    <th>Estudo de Mercado (Lisa)</th>
                     <th>Recebido em</th>
                     <th>Status</th>
                   </tr>
@@ -380,12 +379,12 @@ export default function AvaliacaoAdminPage() {
                           }
                           return (
                             <button
-                              onClick={() => pedirInformativo(lead)}
+                              onClick={() => pedirEstudoMercado(lead)}
                               className="btn btn-secondary"
                               style={{ fontSize: '0.72rem', gap: 5, padding: '0.35rem 0.6rem' }}
                               title={status === 'erro' ? 'Não foi possível gerar automaticamente — tentar de novo' : undefined}
                             >
-                              <Sparkles size={12} /> {status === 'erro' ? 'Tentar de novo' : 'Pedir informativo'}
+                              <Sparkles size={12} /> {status === 'erro' ? 'Tentar de novo' : 'Pedir à Lisa'}
                             </button>
                           );
                         })()}

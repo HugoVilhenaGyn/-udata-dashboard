@@ -32,7 +32,7 @@ const navItems = [
   { href: '/receita', label: 'Dashboard de Receita', icon: BarChart3 },
   { href: '/destaques', label: 'Gestão de Destaques', icon: Zap },
   { href: '/xml', label: 'Motor de XML', icon: FileCode2 },
-  { href: '/avaliacao-admin', label: 'Avaliação Online', icon: Calculator },
+  { href: '/avaliacao-admin', label: 'Calculadora Online', icon: Calculator },
   { href: '/informativo-imovel', label: 'Informativo do Imóvel', icon: LineChart },
 ];
 

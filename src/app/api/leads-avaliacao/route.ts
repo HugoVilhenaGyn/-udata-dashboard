@@ -56,12 +56,11 @@ export async function POST(req: NextRequest) {
     db.leadsAvaliacao = [novo, ...db.leadsAvaliacao];
     await writeDb(db);
 
-    // Dispara o informativo do imóvel (precificação + diagnóstico) da Lisa
-    // em background, sem bloquear a resposta ao visitante (ele não precisa
-    // esperar o Gemini rodar pra ver a confirmação de que o pedido foi
-    // recebido). O corretor vê o resultado aparecer sozinho em
-    // /avaliacao-admin quando terminar.
-    gerarInformativoAutomatico(novo).catch(() => {});
+    // Dispara o estudo de mercado da Lisa em background, sem bloquear a
+    // resposta ao visitante (ele não precisa esperar o Gemini rodar pra ver
+    // a confirmação de que o pedido foi recebido). O corretor vê o
+    // resultado aparecer sozinho em /avaliacao-admin quando terminar.
+    gerarEstudoMercadoAutomatico(novo).catch(() => {});
 
     return NextResponse.json({ success: true, data: novo });
   } catch (error: any) {
@@ -74,12 +73,12 @@ export async function POST(req: NextRequest) {
 // visitante preencheu na calculadora (bairro, tipo, área, finalidade) e usa
 // a ferramenta comparaveis_portfolio_por_segmento (comparáveis reais do
 // portfólio) pra montar uma faixa de valor de referência antes mesmo do
-// corretor abrir a tela. Isso é um informativo de precificação e
-// diagnóstico de qualidade do anúncio — não uma pesquisa de mercado
-// externa formal.
-async function gerarInformativoAutomatico(lead: LeadAvaliacao) {
+// corretor abrir a tela. Esse é o estudo de mercado da Calculadora Online
+// — usa dados reais do portfólio próprio e, se houver, pesquisas de
+// mercado externas cadastradas pela equipe.
+async function gerarEstudoMercadoAutomatico(lead: LeadAvaliacao) {
   const finalidadeTxt = lead.finalidade === 'venda' ? 'venda' : 'locação';
-  const mensagemLisa = `Gere um informativo do imóvel (precificação com base no próprio portfólio + diagnóstico de qualidade do anúncio, não uma pesquisa de mercado externa) para embasar o atendimento do lead "${lead.nome}", que pediu uma avaliação de ${finalidadeTxt} de um imóvel do tipo "${lead.tipo}" no bairro "${lead.bairro}", com aproximadamente ${lead.area_util}m²${lead.quartos ? ` e ${lead.quartos} quartos` : ''}. Use comparaveis_portfolio_por_segmento e comparáveis reais do portfólio nesse bairro/tipo/finalidade pra justificar uma faixa de valor de referência, cite a oferta e demanda reais (quantos comparáveis, leads e visualizações da semana nesse segmento) e feche com uma recomendação prática de precificação pro corretor levar pra conversa com esse cliente. O título do relatório precisa começar exatamente com "Informativo do Imóvel — Lead".`;
+  const mensagemLisa = `Gere um relatório de estudo de mercado para embasar o atendimento do lead "${lead.nome}", que pediu uma avaliação de ${finalidadeTxt} de um imóvel do tipo "${lead.tipo}" no bairro "${lead.bairro}", com aproximadamente ${lead.area_util}m²${lead.quartos ? ` e ${lead.quartos} quartos` : ''}. Use comparaveis_portfolio_por_segmento e comparáveis reais do portfólio nesse bairro/tipo/finalidade pra justificar uma faixa de valor de referência, cite a oferta e demanda reais (quantos comparáveis, leads e visualizações da semana nesse segmento) e feche com uma recomendação prática de precificação pro corretor levar pra conversa com esse cliente. O título do relatório precisa começar exatamente com "Estudo de Mercado — Lead".`;
 
   let status: 'pronto' | 'erro' = 'erro';
   let relatorioId: string | undefined;
@@ -87,7 +86,7 @@ async function gerarInformativoAutomatico(lead: LeadAvaliacao) {
   try {
     const resultado = await processarMensagemLisa({
       mensagem: mensagemLisa,
-      contextoTela: { secao: 'Avaliação Online (automático)', detalhe: `Lead: ${lead.nome} — ${finalidadeTxt} de ${lead.tipo} em ${lead.bairro}` },
+      contextoTela: { secao: 'Calculadora Online (automático)', detalhe: `Lead: ${lead.nome} — ${finalidadeTxt} de ${lead.tipo} em ${lead.bairro}` },
       autor: 'Lisa (automático ao receber lead)',
     });
 

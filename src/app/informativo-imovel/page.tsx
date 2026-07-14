@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import Link from 'next/link';
 import Header from '@/components/layout/Header';
 import { formatCurrency, codigoImovel } from '@/lib/mock-data';
 import { useImoveis } from '@/lib/use-imoveis';
@@ -72,24 +71,42 @@ export default function InformativoImovelPage() {
       const codigo = codigoImovel(imovel.id_externo);
       const mensagem = `Gere um informativo do imóvel de código ${codigo} da nossa própria carteira (precificação com base no próprio portfólio + diagnóstico de qualidade do anúncio, não uma pesquisa de mercado externa) — "${imovel.titulo}", no bairro "${imovel.bairro}", tipo "${imovel.tipo}", ${imovel.area_util}m²${imovel.quartos ? `, ${imovel.quartos} quartos` : ''}, atualmente anunciado por ${formatCurrency(imovel.preco_atual)} para ${finalidadeTxt}. Use comparaveis_portfolio_por_segmento e comparáveis reais do portfólio nesse bairro/tipo/finalidade pra avaliar se o preço atual desse imóvel está alinhado, abaixo ou acima do próprio portfólio, cite a oferta e demanda reais (quantos comparáveis, leads e visualizações da semana nesse segmento) e feche com uma recomendação prática — manter, reduzir ou reforçar a divulgação. O título do relatório precisa começar exatamente com "${PREFIXO_TITULO} ${codigo}".`;
 
-      const res = await fetch('/api/copiloto', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mensagem,
-          contextoTela: { secao: 'Informativo do Imóvel', detalhe: `Imóvel ${codigo} — ${imovel.titulo}` },
-        }),
-      });
+      // Trava de segurança: a Lisa pode levar até ~40s por etapa de
+      // ferramenta (até 5 etapas no orquestrador), então sem um teto o
+      // botão pode ficar em "Gerando..." indefinidamente se a conexão
+      // travar em algum ponto no meio do caminho, sem nunca dar erro nem
+      // sucesso. Com isso, no pior caso a tela sempre volta a responder.
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4 * 60_000);
+      let res: Response;
+      try {
+        res = await fetch('/api/copiloto', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mensagem,
+            contextoTela: { secao: 'Informativo do Imóvel', detalhe: `Imóvel ${codigo} — ${imovel.titulo}` },
+          }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
       const json = await res.json();
       if (!json.success) throw new Error(json.message);
 
       if (json.data.relatorio?.id) {
-        setRelatorioIdPorImovel(prev => ({ ...prev, [imovel.id]: json.data.relatorio.id }));
+        const relatorioId = json.data.relatorio.id;
+        setRelatorioIdPorImovel(prev => ({ ...prev, [imovel.id]: relatorioId }));
         setStatus(prev => ({ ...prev, [imovel.id]: 'pronto' }));
         setHistorico(prev => [
-          { id: json.data.relatorio.id, titulo: json.data.relatorio.titulo, tipo: json.data.relatorio.tipo, criado_em: new Date().toISOString() },
+          { id: relatorioId, titulo: json.data.relatorio.titulo, tipo: json.data.relatorio.tipo, criado_em: new Date().toISOString() },
           ...prev,
         ]);
+        // Abre o PDF do informativo automaticamente assim que fica pronto —
+        // o pedido do usuário é "gerar o informativo", não "gerar e depois
+        // eu clicar em mais um link pra ver o resultado".
+        window.open(`/api/relatorios/${relatorioId}/pdf`, '_blank', 'noopener,noreferrer');
       } else {
         setStatus(prev => ({ ...prev, [imovel.id]: 'erro' }));
         setAviso('⚠️ A Lisa respondeu, mas não gerou um relatório estruturado dessa vez. Tente novamente.');
@@ -97,7 +114,10 @@ export default function InformativoImovelPage() {
       }
     } catch (err: any) {
       setStatus(prev => ({ ...prev, [imovel.id]: 'erro' }));
-      setAviso(`⚠️ ${err.message || 'Erro ao pedir o informativo à Lisa.'}`);
+      const mensagemErro = err?.name === 'AbortError'
+        ? 'A Lisa demorou demais pra responder (mais de 4 minutos). Tente novamente.'
+        : (err.message || 'Erro ao pedir o informativo à Lisa.');
+      setAviso(`⚠️ ${mensagemErro}`);
       setTimeout(() => setAviso(null), 5000);
     }
   };
@@ -141,7 +161,7 @@ export default function InformativoImovelPage() {
                 return (
                   <tr key={imovel.id}>
                     <td style={{ fontSize: '0.8rem' }}>
-                      <div style={{ fontWeight: 600 }}>#{codigo} · {imovel.tipo}</div>
+                      <div style={{ fontWeight: 600 }}>{codigo} · {imovel.tipo}</div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{imovel.titulo}</div>
                     </td>
                     <td style={{ fontSize: '0.8rem' }}>
@@ -158,16 +178,18 @@ export default function InformativoImovelPage() {
                         </span>
                       ) : st === 'pronto' && relatorioId ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <Link
-                            href={`/relatorios?id=${relatorioId}`}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#22c55e', fontWeight: 600, textDecoration: 'none' }}
-                          >
-                            <FileText size={12} /> Ver relatório
-                          </Link>
                           <a
                             href={`/api/relatorios/${relatorioId}/pdf`}
                             target="_blank"
                             rel="noopener noreferrer"
+                            title="Abrir o PDF do informativo com a identidade visual da Lobo Imóveis"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#22c55e', fontWeight: 600, textDecoration: 'none' }}
+                          >
+                            <FileText size={12} /> Ver informativo
+                          </a>
+                          <a
+                            href={`/api/relatorios/${relatorioId}/pdf`}
+                            download
                             title="Baixar PDF com a identidade visual da Lobo Imóveis"
                             style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--text-muted)' }}
                           >
@@ -220,11 +242,17 @@ export default function InformativoImovelPage() {
         ) : (
           <div className={styles.historicoLista}>
             {historico.map(r => (
-              <Link key={r.id} href={`/relatorios?id=${r.id}`} className={styles.historicoItem}>
+              <a
+                key={r.id}
+                href={`/api/relatorios/${r.id}/pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.historicoItem}
+              >
                 <FileText size={14} />
                 <span>{r.titulo}</span>
                 <span className={styles.historicoData}>{new Date(r.criado_em).toLocaleDateString('pt-BR')}</span>
-              </Link>
+              </a>
             ))}
           </div>
         )}

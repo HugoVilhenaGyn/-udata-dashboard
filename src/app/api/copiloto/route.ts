@@ -462,15 +462,34 @@ Regras:
     let rotaLabel: string | null = null;
 
     for (let step = 0; step < MAX_STEPS; step++) {
-      const geminiRes = await fetch(GEMINI_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({
-          contents,
-          systemInstruction: { parts: [{ text: systemInstruction }] },
-          tools: TOOLS,
-        }),
-      });
+      // Timeout por chamada — sem isso, se a API do Gemini travar/demorar
+      // demais numa etapa (especialmente em análises com vários passos de
+      // ferramenta em sequência), o fetch fica pendurado indefinidamente e a
+      // tela some com o "Gerando..." pra sempre, sem erro nenhum aparecer
+      // pro usuário. Com o AbortController, cada etapa falha de forma
+      // previsível e o catch mais abaixo transforma isso num erro visível.
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45_000);
+      let geminiRes: Response;
+      try {
+        geminiRes = await fetch(GEMINI_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+          body: JSON.stringify({
+            contents,
+            systemInstruction: { parts: [{ text: systemInstruction }] },
+            tools: TOOLS,
+          }),
+          signal: controller.signal,
+        });
+      } catch (err: any) {
+        if (err?.name === 'AbortError') {
+          return { success: false, message: 'A Lisa demorou demais pra responder essa etapa (mais de 45s). Tente novamente — se persistir, tente uma pergunta mais direta.', status: 504 };
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!geminiRes.ok) {
         const errText = await geminiRes.text();

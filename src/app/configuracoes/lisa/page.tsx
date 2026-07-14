@@ -91,18 +91,23 @@ export default function ConfiguracoesLisaPage() {
 
   const enviarArquivo = (file: File) => {
     setEnviandoDoc(true);
-    const ehPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const nomeMin = file.name.toLowerCase();
+    const ehPdf = file.type === 'application/pdf' || nomeMin.endsWith('.pdf');
+    const ehXlsx = nomeMin.endsWith('.xlsx') || nomeMin.endsWith('.xls') ||
+      file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      file.type === 'application/vnd.ms-excel';
+    const ehBinario = ehPdf || ehXlsx;
     const reader = new FileReader();
 
     reader.onload = async () => {
       try {
         const body: Record<string, string> = { nome: file.name, fonte: fonteUpload };
-        if (ehPdf) {
-          // data:application/pdf;base64,XXXX — só o pedaço depois da vírgula interessa
+        if (ehBinario) {
+          // data:...;base64,XXXX — só o pedaço depois da vírgula interessa
           const dataUrl = String(reader.result || '');
           const base64 = dataUrl.split(',')[1] || '';
-          if (!base64) throw new Error('Não consegui ler esse PDF.');
-          body.formato = 'pdf';
+          if (!base64) throw new Error(`Não consegui ler esse ${ehPdf ? 'PDF' : 'Excel'}.`);
+          body.formato = ehPdf ? 'pdf' : 'xlsx';
           body.conteudoBase64 = base64;
         } else {
           const conteudo = String(reader.result || '');
@@ -133,7 +138,7 @@ export default function ConfiguracoesLisaPage() {
       setTimeout(() => setAviso(null), 4000);
     };
 
-    if (ehPdf) {
+    if (ehBinario) {
       reader.readAsDataURL(file);
     } else {
       reader.readAsText(file);
@@ -212,9 +217,10 @@ export default function ConfiguracoesLisaPage() {
             </h2>
             <div className={styles.sectionSub}>
               Suba arquivos com pesquisas de anúncios do Portal 62, Zap, DataZap ou outra fonte (ex: preços de imóveis
-              concorrentes, anuários de mercado, guias de bairro). A Lisa usa esse conteúdo como referência extra ao
-              montar um estudo de mercado, junto com os dados reais do portfólio. Aceita .pdf, .txt, .csv e .md — PDFs
-              escaneados (imagem, sem texto real) não têm o conteúdo extraído automaticamente.
+              concorrentes, anuários de mercado, guias de bairro, planilhas de captação/IAC). A Lisa usa esse conteúdo
+              como referência extra ao montar um estudo de mercado, junto com os dados reais do portfólio. Aceita
+              .pdf, .xlsx, .xls, .txt, .csv e .md — PDFs escaneados (imagem, sem texto real) não têm o conteúdo
+              extraído automaticamente, e planilhas Excel são convertidas aba por aba em tabelas de texto.
             </div>
           </div>
         </div>
@@ -236,7 +242,7 @@ export default function ConfiguracoesLisaPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.txt,.csv,.md,application/pdf,text/plain,text/csv,text/markdown"
+                accept=".pdf,.xlsx,.xls,.txt,.csv,.md,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/plain,text/csv,text/markdown"
                 onChange={e => { const f = e.target.files?.[0]; if (f) enviarArquivo(f); }}
                 disabled={enviandoDoc}
                 className={styles.fileInput}

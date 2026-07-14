@@ -5,15 +5,20 @@ import { verifySessionToken } from '@/lib/auth-service';
 
 // Documentos de pesquisa de mercado (Portal 62, Zap, DataZap etc.) que a
 // equipe sobe pra Lisa usar como referência ao montar um estudo de mercado.
-// Dois formatos de entrada aceitos:
+// Três formatos de entrada aceitos:
 // - texto puro (.txt/.csv/.md): o navegador já manda o texto extraído
 //   (FileReader.readAsText), a gente só valida e corta um teto de tamanho.
 // - PDF: o navegador manda o arquivo em base64 (FileReader.readAsDataURL),
 //   e aqui no servidor extraímos o texto com pdf-parse antes de salvar —
 //   sem essa extração, um PDF vira lixo binário no prompt da Lisa.
+// - Excel (.xlsx/.xls): mesma lógica do PDF (base64), mas convertemos cada
+//   aba pra CSV com a lib "xlsx" (SheetJS) — planilhas tipo o "Painel de
+//   Captação IAC" chegam com preço médio por bairro, pesos e rankings, e a
+//   Lisa só consegue usar isso se virar texto/tabela legível.
 const CONTEUDO_MAX = 30000; // chars por documento — teto pra não estourar o prompt da Lisa
 const TOTAL_DOCUMENTOS_MAX = 30;
 const PDF_MAX_BYTES = 25 * 1024 * 1024; // 25MB — teto de upload
+const XLSX_MAX_BYTES = 25 * 1024 * 1024;
 
 async function getSession(req: NextRequest) {
   const cookieStore = await cookies();
@@ -33,8 +38,8 @@ export async function POST(req: NextRequest) {
       nome: string;
       fonte: string;
       conteudo?: string;
-      conteudoBase64?: string; // PDF em base64 (sem o prefixo "data:...;base64,")
-      formato?: 'texto' | 'pdf';
+      conteudoBase64?: string; // PDF/Excel em base64 (sem o prefixo "data:...;base64,")
+      formato?: 'texto' | 'pdf' | 'xlsx';
     };
 
     if (!nome) {
@@ -72,6 +77,45 @@ export async function POST(req: NextRequest) {
       if (!textoExtraido) {
         return NextResponse.json(
           { success: false, message: 'Esse PDF não tem texto extraível (provavelmente é um scan/imagem). Copie o conteúdo relevante pra um .txt e suba de novo.' },
+          { status: 400 }
+        );
+      }
+    } else if (formato === 'xlsx') {
+      if (!conteudoBase64) {
+        return NextResponse.json({ success: false, message: 'Planilha vazia.' }, { status: 400 });
+      }
+      const buffer = Buffer.from(conteudoBase64, 'base64');
+      if (buffer.length > XLSX_MAX_BYTES) {
+        return NextResponse.json(
+          { success: false, message: `Planilha maior que ${(XLSX_MAX_BYTES / (1024 * 1024)).toFixed(0)}MB.` },
+          { status: 400 }
+        );
+      }
+      try {
+        // SheetJS lê o .xlsx/.xls e a gente converte cada aba pra CSV — vira
+        // texto de tabela que a Lisa consegue ler direto no prompt (preço
+        // médio por bairro, rankings etc.), sem precisar interpretar o
+        // binário do Excel.
+        const XLSX = await import('xlsx');
+        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const partes: string[] = [];
+        for (const sheetName of workbook.SheetNames) {
+          const sheet = workbook.Sheets[sheetName];
+          const csv = XLSX.utils.sheet_to_csv(sheet, { blankrows: false });
+          if (csv.trim()) {
+            partes.push(`### Aba: ${sheetName}\n${csv.trim()}`);
+          }
+        }
+        textoExtraido = partes.join('\n\n').trim();
+      } catch (err: any) {
+        return NextResponse.json(
+          { success: false, message: `Não consegui ler essa planilha: ${err.message || 'erro desconhecido'}. Confira se é um .xlsx/.xls válido.` },
+          { status: 400 }
+        );
+      }
+      if (!textoExtraido) {
+        return NextResponse.json(
+          { success: false, message: 'Essa planilha não tem dados nas abas (ou todas vieram vazias).' },
           { status: 400 }
         );
       }

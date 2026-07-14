@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react';
 import Header from '@/components/layout/Header';
 import FarolBadge from '@/components/ui/FarolBadge';
 import QualityBar from '@/components/ui/QualityBar';
-import { mockImoveis, formatCurrency, formatNumber, codigoImovel } from '@/lib/mock-data';
+import { formatCurrency, formatNumber, codigoImovel } from '@/lib/mock-data';
+import { useImoveis } from '@/lib/use-imoveis';
 import { FarolStatus, ImovelTipo, ImovelFinalidade } from '@/lib/types';
 import {
   Lightbulb, TrendingUp, Clock, TrendingDown, Filter, Eye, Users, ArrowUpRight, ChevronRight,
@@ -49,6 +50,7 @@ const FAROL_CONFIG = {
 };
 
 export default function FarolPage() {
+  const { imoveis: mockImoveis } = useImoveis();
   const [selectedStatus, setSelectedStatus] = useState<FarolStatus | 'all'>('all');
   const [search, setSearch] = useState('');
   const [tipoFilter, setTipoFilter] = useState<ImovelTipo | 'all'>('all');
@@ -60,8 +62,8 @@ export default function FarolPage() {
   // ao mesmo tempo, cada um com seus 3 cards reais, sem precisar alternar.
   const [finalidadeFilter, setFinalidadeFilter] = useState<ImovelFinalidade | 'all'>('all');
 
-  const imoveisVenda = useMemo(() => mockImoveis.filter(i => i.finalidade === 'venda'), []);
-  const imoveisLocacao = useMemo(() => mockImoveis.filter(i => i.finalidade === 'aluguel'), []);
+  const imoveisVenda = useMemo(() => mockImoveis.filter(i => i.finalidade === 'venda'), [mockImoveis]);
+  const imoveisLocacao = useMemo(() => mockImoveis.filter(i => i.finalidade === 'aluguel'), [mockImoveis]);
 
   const countsVenda = useMemo(() => ({
     venda_iminente: imoveisVenda.filter(i => i.status_farol === 'venda_iminente').length,
@@ -77,7 +79,7 @@ export default function FarolPage() {
 
   const escopo = useMemo(() => (
     finalidadeFilter === 'all' ? mockImoveis : mockImoveis.filter(i => i.finalidade === finalidadeFilter)
-  ), [finalidadeFilter]);
+  ), [finalidadeFilter, mockImoveis]);
 
   // Clica em um card do Farol de Venda ou de Locação: filtra a grade abaixo
   // por aquela finalidade + status específicos, de forma explícita.

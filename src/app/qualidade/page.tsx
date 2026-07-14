@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import QualityBar from '@/components/ui/QualityBar';
 import FarolBadge from '@/components/ui/FarolBadge';
-import { mockImoveis, formatCurrency, qualidadeColor, codigoImovel } from '@/lib/mock-data';
+import { formatCurrency, qualidadeColor, codigoImovel } from '@/lib/mock-data';
+import { useImoveis } from '@/lib/use-imoveis';
 import { Imovel, CriterioQualidade } from '@/lib/types';
 import {
   Star, CheckCircle2, XCircle, AlertCircle, ChevronDown, ChevronUp, Wand2, MapPin,
@@ -44,29 +45,46 @@ export default function QualidadePage() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'critico' | 'ok'>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
-  // Cópia local editável dos imóveis — o "Enriquecer automaticamente" atualiza
-  // esse estado (mockImoveis é compartilhado entre páginas e não deve ser mutado).
-  const [imoveis, setImoveis] = useState<Imovel[]>(mockImoveis);
+  // Portfólio real (Postgres, via /api/imoveis). Mantemos uma cópia local
+  // editável em cima do que a API traz — "Enriquecer automaticamente" agora
+  // chama a mesma API que a Lisa usa (PATCH /api/imoveis/[id]) e persiste de
+  // verdade, em vez de só mutar estado local que sumia ao recarregar.
+  const { imoveis: imoveisRemote } = useImoveis();
+  const [imoveis, setImoveis] = useState<Imovel[]>(imoveisRemote);
   const [enriquecendo, setEnriquecendo] = useState<string | null>(null);
 
-  const enriquecerImovel = (id: string) => {
+  useEffect(() => {
+    setImoveis(imoveisRemote);
+  }, [imoveisRemote]);
+
+  const enriquecerImovel = async (id: string) => {
     setEnriquecendo(id);
-    setTimeout(() => {
-      setImoveis(prev => prev.map(imovel => {
-        if (imovel.id !== id) return imovel;
-        const novosCriterios = imovel.criterios_qualidade.map(c =>
-          c.presente ? c : { ...c, presente: true, pontos: c.peso, sugestao: undefined }
-        );
-        const novaNota = parseFloat(novosCriterios.reduce((acc, c) => acc + c.pontos, 0).toFixed(1));
-        return {
-          ...imovel,
-          criterios_qualidade: novosCriterios,
-          nota_qualidade: novaNota,
-          descricao_enriquecida: imovel.descricao_enriquecida || imovel.descricao,
-        };
-      }));
+    try {
+      const res = await fetch(`/api/imoveis/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'enriquecer_anuncio' }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setImoveis(prev => prev.map(imovel => {
+          if (imovel.id !== id) return imovel;
+          const novosCriterios = imovel.criterios_qualidade.map(c =>
+            c.presente ? c : { ...c, presente: true, pontos: c.peso, sugestao: undefined }
+          );
+          return {
+            ...imovel,
+            criterios_qualidade: novosCriterios,
+            nota_qualidade: json.data.nota_depois,
+            descricao_enriquecida: imovel.descricao_enriquecida || imovel.descricao,
+          };
+        }));
+      }
+    } catch {
+      // Falha de rede — não atualiza a UI silenciosamente com dado não persistido.
+    } finally {
       setEnriquecendo(null);
-    }, 900);
+    }
   };
 
   const filtered = useMemo(() => {

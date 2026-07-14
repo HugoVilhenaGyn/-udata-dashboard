@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react';
 import Header from '@/components/layout/Header';
 import FarolBadge from '@/components/ui/FarolBadge';
 import QualityBar from '@/components/ui/QualityBar';
-import { mockImoveis, formatCurrency, formatNumber, codigoImovel } from '@/lib/mock-data';
+import { formatCurrency, formatNumber, codigoImovel } from '@/lib/mock-data';
+import { useImoveis } from '@/lib/use-imoveis';
 import { FarolStatus, ImovelTipo } from '@/lib/types';
 import {
   Search, SlidersHorizontal, Download, Eye, Users, Calendar, ChevronUp, ChevronDown, Star, AlertTriangle,
@@ -20,6 +21,7 @@ const portalColors: Record<string, string> = {
 };
 
 export default function InventarioPage() {
+  const { imoveis: mockImoveis } = useImoveis();
   const [search, setSearch] = useState('');
   const [farolFilter, setFarolFilter] = useState<FarolStatus | 'all'>('all');
   const [tipoFilter, setTipoFilter] = useState<ImovelTipo | 'all'>('all');
@@ -92,7 +94,7 @@ ${imoveis.map(i => `    <Listing>
       return sortDir === 'asc' ? va - vb : vb - va;
     });
     return items;
-  }, [search, farolFilter, tipoFilter, sortField, sortDir]);
+  }, [search, farolFilter, tipoFilter, sortField, sortDir, mockImoveis]);
 
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const totalPages = Math.ceil(filtered.length / PER_PAGE);

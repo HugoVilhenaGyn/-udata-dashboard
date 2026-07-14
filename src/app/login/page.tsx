@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, Mail, RefreshCw, AlertCircle, Eye, EyeOff, Shield } from 'lucide-react';
+import { Lock, Mail, RefreshCw, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import styles from './page.module.css';
 
 export default function LoginPage() {
@@ -45,13 +45,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Preencher credenciais de teste rapidamente
-  const preencherCredenciais = (testEmail: string, testPass: string) => {
-    setEmail(testEmail);
-    setPassword(testPass);
-    setError('');
   };
 
   return (
@@ -135,34 +128,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-
-        {/* Contas reais da LOBO IMOVEIS */}
-        <div className={styles.demoSection}>
-          <div className={styles.demoTitle}>
-            <Shield size={12} />
-            Contas da LOBO IMOVEIS:
-          </div>
-          <div className={styles.demoBtns}>
-            <button
-              onClick={() => preencherCredenciais('hugo.f.vilhena@gmail.com', 'Lobo@2026')}
-              className={styles.demoBtn}
-            >
-              👑 Hugo Vilhena (Admin)
-            </button>
-            <button
-              onClick={() => preencherCredenciais('atendimento@loboimoveis.imb.br', 'Lobo@2026')}
-              className={styles.demoBtn}
-            >
-              👤 Equipe Comercial (Corretor)
-            </button>
-            <button
-              onClick={() => preencherCredenciais('marketing@loboimoveis.imb.br', 'Lobo@2026')}
-              className={styles.demoBtn}
-            >
-              📣 Equipe Marketing (Growth)
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
